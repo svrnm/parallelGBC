@@ -1,1 +1,15 @@
-Coming soon...
+Parallel Groebner Basis Computation.
+
+INSTALLATION
+make;
+
+TESTING
+
+Compute the /degrevlex/-gröbner basis of cyclic-8 with 4 threads
+
+cd test/;
+./test/test-f4 ../input/cyclic8.txt 4
+
+USAGE
+
+See test/test-f4.C

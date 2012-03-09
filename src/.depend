@@ -1,0 +1,19 @@
+CoeffField.o: CoeffField.C ../include/CoeffField.H
+F4Algorithm.o: F4Algorithm.C ../include/F4Algorithm.H \
+ ../include/../include/Term.H ../include/../include/TMonoid.H \
+ ../include/../include/TOrdering.H ../include/../include/Polynomial.H \
+ ../include/../include/../include/Term.H \
+ ../include/../include/../include/CoeffField.H \
+ ../include/../include/../include/TOrdering.H \
+ ../include/../include/F4Utils.H
+F4Utils.o: F4Utils.C ../include/F4Utils.H
+Polynomial.o: Polynomial.C ../include/Polynomial.H \
+ ../include/../include/Term.H ../include/../include/TMonoid.H \
+ ../include/../include/TOrdering.H ../include/../include/CoeffField.H \
+ ../include/../include/TOrdering.H
+TMonoid.o: TMonoid.C ../include/TMonoid.H ../include/Term.H \
+ ../include/TMonoid.H ../include/TOrdering.H
+TOrdering.o: TOrdering.C ../include/TOrdering.H ../include/Term.H \
+ ../include/TMonoid.H ../include/TOrdering.H
+Term.o: Term.C ../include/Term.H ../include/TMonoid.H \
+ ../include/TOrdering.H

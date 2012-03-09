@@ -1,0 +1,16 @@
+CXX = /usr/bin/g++-4.6
+CXXFLAGS = -fPIC -Wall -fopenmp -O2 -march=native -pipe -D'F4_THREADS=2' -D'F4_COEFF_BITS=16' -D'F4_USE_SSE=1' -std=c++0x
+#CXXFLAGS = -fPIC -Wall -pg -g3 -gdwarf-2 -D'F4_THREADS=1' -D'F4_COEFF_BITS=16' -D'F4_USE_SSE=1' -std=c++0x
+LIBRARY = ../lib/libf4.a
+
+dummy:
+	echo "Please use the Makefile in the main directory or specify a target"
+
+%.o: %.C ../include/%.H ../Makefile.rules
+	$(CXX) $(CXXFLAGS) -c $<
+
+%.bin: %.C $(LIBRARY)
+	$(CXX) $(CXXFLAGS) -o $(<:%.C=%.bin) $< $(LIBRARY) -lboost_regex
+
+objclean:
+	rm -f $(OBJ)

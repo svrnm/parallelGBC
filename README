@@ -1,4 +1,4 @@
-Parallel Groebner Basis Computation.
+Parallel Groebner Basis Computation (alpha 0.1)
 
 INSTALLATION
 make;

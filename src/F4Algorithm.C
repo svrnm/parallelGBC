@@ -380,7 +380,6 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 	updatePairs(pairs, generators,true);
 
 	while( !pairs.empty() ) {
-		BREAKPOINT
 		vector<Polynomial> polys;
 		reduce(pairs, polys);
 		if(!polys.empty()) {
@@ -395,20 +394,13 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 				k++;
 			}
 		}
-		cout << "GB Size: \t" << groebnerBasis.size() << "\n";
-		cout << "GB (in): \t" << k << "\n";
-		cout << "GB Length: \t" << t << "\n";
-		cout << "TM Size: \t" << generators[0].LT()->owner->size() << "\n";
 	}
-	//cout << "R-Time: \t" << reductionTime << "\n";
-	//cout << "P-Time: \t" << prepareTime << "\n";
-	//cout << "U-Time: \t" << updateTime << "\n";
 	vector<Polynomial> result;
 	for(size_t i = 0; i < groebnerBasis.size(); i++)
 	{
 		if(inGroebnerBasis[i])
 			result.push_back(groebnerBasis[i]);
 	}
-	//cout << "Runtime:\t" << seconds() - start << "\n";
+	cout << "Runtime:\t" << seconds() - start << "\n";
 	return result;
 }

@@ -3,6 +3,7 @@
 #include <string.h>
 #include "TMonoid.H"
 #include "TOrdering.H"
+#include <unordered_set>
 #include <iostream>
 
 using namespace std;
@@ -17,12 +18,16 @@ class Term {
 		size_t hash;
 		degreeType* indets;
 
+		degreeType* alloc() {
+			return (degreeType*)malloc(owner->N*sizeof(degreeType));
+		}
+
 		Term(TMonoid* const m) : owner(m) {
-			indets = (degreeType*)malloc(owner->N*sizeof(degreeType));
+			indets = this->alloc();
 		}
 	
 		Term(TMonoid* const m, const degreeType* i) : owner(m)  {
-			indets = (degreeType*)malloc(owner->N*sizeof(degreeType));
+			indets = alloc();
 			memcpy(indets, i, owner->N*sizeof(degreeType));
 			setHash();
 			setDegree();
@@ -30,7 +35,7 @@ class Term {
 
 		// Multiplication constructor
 		Term(TMonoid* const m, const degreeType* a, const degreeType* b) : owner(m) {
-			indets = (degreeType*)malloc(owner->N*sizeof(degreeType));
+			indets = alloc();
 			for(size_t i = 0; i < owner->N; i++) {
 				indets[i] = a[i] + b[i];
 			}
@@ -49,13 +54,10 @@ class Term {
 			}
 		}		
 		void setHash() {
-		        hash = indets[0];
-		        for(size_t i = 1; i < owner->N; i++)
-		        {
-				// Problem: Large degree of x[1] gets 'cut' ?
-                		hash <<= owner->D;
-	        	        hash += indets[i];
-        		}
+			hash = 0;
+			for(size_t i = 0; i < owner->N; i++) {
+				hash ^= indets[i] + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+			}
 		}
 
 		void set(size_t i, degreeType value) const {

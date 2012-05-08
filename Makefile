@@ -23,9 +23,4 @@ src:
 clean:
 	$(MAKE) -C src objclean
 	$(MAKE) -C test objclean
-	rm -f $(LIBRARY)
-
-a:
-	$(MAKE) b;
-b:
-	echo b;
+	rm -f lib/*.a

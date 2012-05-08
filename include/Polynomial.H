@@ -12,7 +12,7 @@ typedef pair<coeffType, const Term*> Monomial;
 
 class Polynomial {
 	private:
-		vector<Monomial> monomials;
+		std::vector<Monomial> monomials;
 		degreeType sugarDegree;
 
 	public:
@@ -23,7 +23,7 @@ class Polynomial {
 			sugarDegree = 0;
 		}
 		
-		Polynomial(vector<Monomial>& ms) : monomials(ms)
+		Polynomial(std::vector<Monomial>& ms) : monomials(ms)
 		{ 
 			if(ms.size() > 0)
 			{ 

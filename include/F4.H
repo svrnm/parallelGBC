@@ -8,5 +8,4 @@
 #include "Polynomial.H"
 #include "PolynomialVector.H"
 #include "F4Algorithm.H"
-#include "GVWAlgorithm.H"
 #endif

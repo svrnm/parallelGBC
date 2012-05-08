@@ -21,19 +21,17 @@ void F4::updatePairs(F4PairSet& pairs, vector<Polynomial>& polys, bool initial)
 		swap(pairs, P1);
 
 		// Let D1 := {(i,t) | 1 <= i < t }.
-		vector<bool> D1(inGroebnerBasis.begin(), inGroebnerBasis.end());
 		for(size_t i = 0; insertIntoG && i < groebnerBasis.size(); i++)
 		{
-			if(D1[i] && h.LT()->isDivisibleBy(groebnerBasis[i].LT())) 
+			if(inGroebnerBasis[i] && h.LT()->isDivisibleBy(groebnerBasis[i].LT())) 
 			{
 				insertIntoG = false;
-				const Term* LCM = groebnerBasis[i].lcmLT(h);
-				F4Pair newpair( LCM, i, t, LCM == groebnerBasis[i].LT()->mul(h.LT()), max(groebnerBasis[i].sugar() - groebnerBasis[i].LT()->deg(), h.sugar() - h.LT()->deg()) + LCM->deg() );
 			}
 		}
 
 		if(insertIntoG)
 		{   
+			vector<bool> D1(inGroebnerBasis.begin(), inGroebnerBasis.end());
 			// Cancel in D1 each (i,t) for which a (j,t) exists s.t. T(i,t) is a proper multiple of T(j,t) [ M(i,t) ]
 			for(size_t i = 0; i < D1.size(); i++) 
 			{
@@ -86,11 +84,11 @@ void F4::updatePairs(F4PairSet& pairs, vector<Polynomial>& polys, bool initial)
 					inGroebnerBasis[j] = false;
 				}
 			}
-		}
-
 		groebnerBasis.push_back( h );
 		inGroebnerBasis.push_back( insertIntoG );
 		t++;
+		}
+
 	}
 	//cout << "UPDATE:\t" << seconds() - timer << "\n";
 	updateTime += seconds() - timer;
@@ -176,8 +174,11 @@ void F4::gauss(vector<vector<coeffType> >& matrix, size_t upper, vector<bool>& e
 void F4::pReduce(vector<vector<F4Operation> >& ops, vector<vector<coeffType> >& rs)
 {
 	size_t i = ops.size();
+
+	field->prepare(rs[0].size());
+
 	while(i--) {
-		#pragma omp parallel for num_threads( threads )
+		#pragma omp parallel for num_threads( threads ) 
 		for(size_t j = 0; j < ops[i].size(); j++)
 		{
 			field->mulSub(rs[ops[i][j].target], rs[ops[i][j].oper], ops[i][j].factor);
@@ -227,7 +228,6 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 		rightSide.push_back( vector<Monomial>() );
 		//rows[i].second->divToVector(groebnerBasis[currentRow].LT(), ir);
 		// For the pivot rows (even rows and lower part) we start at 1 
-		size_t size = groebnerBasis[currentRow].size();
 
 		// precalculated monomials
 		// 50%
@@ -235,9 +235,9 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 		vector<const Term*> pcm = ir->mulAll(groebnerBasis[currentRow], threads, testtimer);
 
 		// 30%	
-		for(size_t j =  (i > upper || i % 2 == 0 ? 1 : 0);   j < size; j++) 
+		for(size_t j =  (i > upper || i % 2 == 0 ? 1 : 0);  j < groebnerBasis[currentRow].size() ; j++) 
 		{
-			Monomial m = groebnerBasis[currentRow][j];
+			coeffType coeff = groebnerBasis[currentRow][j].first;
 			const Term* t = pcm[j];
 			bool wontFound = termsUnordered.count(t) > 0;	
 			bool found = false;
@@ -260,17 +260,18 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 
 			// Eliminate if possible
 			if(found) {
-				pivotOps[t].push_back(make_pair(i, m.first));
+				pivotOps[t].push_back( make_pair(i, coeff) );
 			} else {
-				rightSide[i].push_back( make_pair(m.first, t) );
+				rightSide[i].push_back( make_pair(coeff, t) );
 				if(!wontFound) termsUnordered.insert(t);
 			}
 		}
 	}
 
-	//cout << testtimer << " TEST\n";
-
 	terms.insert(termsUnordered.begin(), termsUnordered.end());
+
+	//rs.assign(rightSide.size(), vector<coeffType>(terms.size(), 0) );
+
 
 	rs.assign(rightSide.size(), vector<coeffType>(terms.size(), 0) );
 	for(size_t i = 0; i < rightSide.size(); i++) {
@@ -284,10 +285,14 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 			k++;
 		}
 	}
+	rightSide.clear();
+	
 	map<const Term*, vector<pair<size_t, coeffType> >, TermComparator> pivotOpsOrdered(pivotOps.begin(), pivotOps.end(), tog);
-
-	vector<size_t> l(rs.size(),0);
+	pivotOps.clear();
 	ops.push_back( vector<F4Operation >() );
+
+	#if 1 
+	vector<size_t> l(rs.size(),0);
 	for(map<const Term*, vector<pair<size_t, coeffType> >, TermComparator>::iterator it = pivotOpsOrdered.begin(); it != pivotOpsOrdered.end(); it++)
 	{
 		size_t o = pivots[it->first];
@@ -306,6 +311,21 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 			}
 		}
 	}
+	#else
+	size_t l = 0;
+	for(map<const Term*, vector<pair<size_t, coeffType> >, TermComparator>::iterator it = pivotOpsOrdered.begin(); it != pivotOpsOrdered.end(); it++)
+	{
+		size_t o = pivots[it->first];
+		for(size_t i = 0; i < it->second.size(); i++)
+		{
+			size_t t = it->second[i].first;
+			ops[ l ].push_back( F4Operation(t, o, it->second[i].second) );
+		}
+		l++;
+		ops.push_back( vector<F4Operation>() );
+	}
+	#endif
+	pivotOpsOrdered.clear();
 	ops.pop_back();
 	prepareTime += seconds() - timer;
 	//cout << "Operations:\t" << ops.size() << "\n";
@@ -321,18 +341,19 @@ void F4::reduce(F4PairSet& pairs, vector<Polynomial>& polys)
 	vector<vector<coeffType> > rs;
 	//vector<vector<size_t> > setOffset; 
 	size_t upper = prepare(pairs, polys, ops, terms, rs);
-	vector<bool> empty(upper, false); // too large, FIX?
 
 	// ELIMINATE
 	double timer = seconds();
 	pReduce(ops, rs);
+	ops.clear();
 	//timer = seconds();
+
+	vector<bool> empty(upper, false); // too large, FIX?
+	
 	gauss(rs, upper, empty);
 	//cout << "GAUSSR:\t" << seconds()-timer << "\n";
 	// ELIMINATE END
 	reductionTime += seconds()-timer;
-	//cout << "MATRIX:\t" << rs.size() << " * " << rs[0].size() << "\n";
-	//cout << "MATRIX:\t" << rs.capacity() * rs[0].capacity() * sizeof(coeffType) << "\n";
 	//cout << "REDUCE:\t" << seconds()-timer << "\n";
 	for(size_t i = 1; i < upper; i+=2)
 	{
@@ -385,7 +406,8 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 		if(!polys.empty()) {
 			updatePairs(pairs, polys);
 		}
-		size_t t = 0;	
+		cout << pairs.size() << " pairs\n";
+		/*size_t t = 0;	
 		size_t k = 0;
 		for(size_t i = 0; i < groebnerBasis.size(); i++)
 		{
@@ -393,8 +415,11 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 			if(inGroebnerBasis[i]) {
 				k++;
 			}
-		}
+		}*/
 	}
+	//cout << "R-Time: \t" << reductionTime << "\n";
+	//cout << "P-Time: \t" << prepareTime << "\n";
+	//cout << "U-Time: \t" << updateTime << "\n";
 	vector<Polynomial> result;
 	for(size_t i = 0; i < groebnerBasis.size(); i++)
 	{

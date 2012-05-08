@@ -49,10 +49,19 @@ const Term* Term::lcm(const Term* other) const {
 }
 
 vector<const Term*> Term::mulAll(Polynomial& in, int threads, double& timer) const {
+	vector<const Term*> result(in.size(), NULL);
+
+	if(this->degree == 0) {
+		for(size_t i = 0; i < in.size(); i++) {
+			result[i] = in[i].second;
+		}
+		return result;
+	}	
+
 	//double helper = seconds();
 	vector<Term*> tmp(in.size(), NULL);
-	vector<const Term*> result(in.size(), NULL);
-	#pragma omp parallel for num_threads( threads ) 
+	// This doesn't really speedup (the critical section takes the most computation time)
+	#pragma omp parallel for num_threads( 1 ) 
 	for(size_t i = 0; i < in.size(); i++) {
 		tmp[i] = new Term(owner, in[i].second->indets, indets);
 		#pragma omp critical

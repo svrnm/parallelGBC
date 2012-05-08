@@ -15,8 +15,6 @@
 	#define __F4_ALGORITHM_THREADS 1
 #endif
 
-
-
 using namespace boost;
 
 class F4Pair {

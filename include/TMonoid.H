@@ -44,13 +44,10 @@ class TMonoid {
 		typedef unordered_set<Term*, TermHash, TermEquals> TermSet;
 		TermSet terms;
 		Term* one;
-		TMonoid(const TMonoid& m) : N(0), D(0) {}
 
 	public:
 		const size_t N;
 		const size_t D;
-		double iTimer;
-		double fTimer;
 		TMonoid(size_t N);
 		
 
@@ -61,12 +58,11 @@ class TMonoid {
 		size_t size() const {
 			return terms.size();
 		}
-		size_t memSize() const {
-			return terms.size() * ( sizeof(TMonoid*) + sizeof(degreeType)*(N+1) );
-		}
 		const Term* getOne() const {
 			return this->one;
 		}
 		~TMonoid();
+	private:
+		TMonoid(const TMonoid& m) : N(m.N), D(m.D) { }
 };
 #endif

@@ -9,23 +9,22 @@
 
 using namespace boost;
 
-TMonoid::TMonoid(size_t N) : N(N), D(64/N) { 
+TMonoid::TMonoid(size_t N) : /*tls(N),*/ N(N), D(64/N) { 
 	one = new Term(this);
 	for(size_t i = 0; i < N; i++) {
 		one->set(i, 0);
 	}
 	one->setHash();
 	one->setDegree();
-	terms.insert( one );
-	//	terms.rehash(1024*1024*8);
+	//terms.insert( one );
+	createElement( one );
 }
 
 
 
 bool TMonoid::TermEquals::operator()(const Term* const t1, const Term* const t2) const 
 {
-	bool r = t1->equal(t2);
-	return r;
+	return t1->equal(t2);
 }
 
 size_t TMonoid::TermHash::operator()(const Term* const t) const {
@@ -33,24 +32,24 @@ size_t TMonoid::TermHash::operator()(const Term* const t) const {
 } 
 
 TMonoid::~TMonoid() {
-	for(TermSet::iterator it = terms.begin(); it != terms.end(); it++) {
-		delete *it;
+
+	cout << terms.bucket_count() << "\n";
+	cout << terms.size() << "\n";
+
+	for(TermSet::iterator it = terms.begin(); it != terms.end(); it++) { 
+		delete *it; 
 	}
-	//cout << "I CREATE:\t" << iTimer << "\n";
-	//cout << "F CREATE:\t" << fTimer << "\n";
 }
 
 const Term* TMonoid::createElement(Term* t)
 {
-	//double helper = seconds();
 	pair<TermSet::iterator, bool> result = terms.insert(t);
 	if(!result.second) { 
 		delete t; 
-		//	iTimer += seconds() - helper;
+		return *(result.first);
 	} else {
-		//	fTimer += seconds() - helper;
+		return t;
 	}
-	return *(result.first);
 }
 
 const Term* TMonoid::createElement(vector<long>& v) 

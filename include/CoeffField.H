@@ -1,48 +1,97 @@
+/*
+ *  Header file for the coefficient field. As coefficient field you can use any
+ *  prime field within 2<=p<=2^k, where p is prime and k = F4_COEFF_BITS. The
+ *  default size of F4_COEFF_BITS is 16, so you can use e.g. the field with 32003
+ *  elements.
+ *
+ *  This file is part of parallelGBC, a parallel groebner basis computation tool.
+ *
+ *  parallelGBC is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  parallelGBC is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
+*/
 #ifndef T_COEFF_FIELD_H
 #define T_COEFF_FIELD_H
 #include <assert.h>
 #include <stdint.h>
 #include <vector>
 #include <iostream>
+
+// By default we use sse.
 #ifndef F4_USE_SSE
-#define F4_USE_SSE 1
+	#define F4_USE_SSE 1
 #endif
 
+// By default we use 16 bits for the coefficients
 #ifndef F4_COEFF_BITS 
 	#define F4_COEFF_BITS 16
 #endif
 
+// Define some variables and functions in dependency of F4_COEFF_BITS
 #if F4_COEFF_BITS <= 16
+	// 8*16 = 128 bits for the SSE vector.
 	#define __COEFF_FIELD_INTVECSIZE 8
+	// The build in GCC function to compare 8 16-bit integers at once
 	#define __COEFF_FIELD_GTVEC(x,y) (__builtin_ia32_pcmpgtw128 (x,y))
+	// The used type
 	#define __COEFF_FIELD_NUMBERTYPE int16_t
 #else
+	// 4*32 = 128 bits for the SSE vector
 	#define __COEFF_FIELD_INTVECSIZE 4
+	// The build in GCC function to compare 4 32-bit integers at once
 	#define __COEFF_FIELD_GTVEC(x,y) (__builtin_ia32_pcmpgtd128 (x,y))
+	// The used type
 	#define __COEFF_FIELD_NUMBERTYPE int32_t
 #endif
 
 using namespace std;
 
+// define the type for coefficients
 typedef __COEFF_FIELD_NUMBERTYPE coeffType;
+
 // Define SSE Vector
 typedef coeffType intvec __attribute__ ((vector_size (16)));
+
 // Helper to initialize the vector
 union intvecarray { intvec v; coeffType f[__COEFF_FIELD_INTVECSIZE]; };
 
-
-class CoeffField /* : public CoeffField */
+/*
+ * This class represents the coefficient field. A coefficient is a
+ * primitive type (i.e. coeffType = intXX_t) and therefore the functions
+ * are applied via an instance of CoeffField. This is good for performance
+ * and memory usage, not for software design ...
+ */
+class CoeffField
 { 
 	public:
+		// The modulus, i.e. n of F_n
 		const coeffType modn;
 
 	private:
+		// precalculated exponents and logarithms
 		vector<coeffType> exps;
 		vector<coeffType> logs;
 		vector<coeffType> invs;
+
+		// modules minus 1
 		const coeffType modnM1;
+
+		// array with k times the modules for SSE computations
 		intvecarray modnvec;
+
+		// this property is used by mulSub as multiplication factor
 		coeffType factor;
+
+		// two helpers for the SSE computations in mulSub
 		size_t limit;
 		size_t s;
 

@@ -22,6 +22,5 @@
 #include "TMonoid.H"
 #include "Term.H"
 #include "Polynomial.H"
-#include "PolynomialVector.H"
 #include "F4Algorithm.H"
 #endif

@@ -49,9 +49,6 @@ size_t TMonoid::TermHash::operator()(const Term* const t) const {
 
 TMonoid::~TMonoid() {
 
-	cout << terms.bucket_count() << "\n";
-	cout << terms.size() << "\n";
-
 	for(TermSet::iterator it = terms.begin(); it != terms.end(); it++) { 
 		delete *it; 
 	}

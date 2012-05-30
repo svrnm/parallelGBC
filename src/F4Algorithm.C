@@ -178,6 +178,7 @@ void F4::gauss(vector<vector<coeffType> >& matrix, size_t upper, vector<bool>& e
 					coeffType factor = field->getFactor(matrix[k][p]);
 					for(size_t m = p; m < matrix[k].size(); m++)
 					{
+						// This is mulSub for primitives not vectors !
 						matrix[k][m] = field->mulSub(matrix[k][m], matrix[i][m], factor);
 					}
 				}
@@ -189,11 +190,7 @@ void F4::gauss(vector<vector<coeffType> >& matrix, size_t upper, vector<bool>& e
 
 void F4::pReduce(vector<vector<F4Operation> >& ops, vector<vector<coeffType> >& rs)
 {
-	size_t i = ops.size();
-
-	field->prepare(rs[0].size());
-
-	while(i--) {
+	for(size_t i = 0; i < ops.size(); i++) {
 		#pragma omp parallel for num_threads( threads ) 
 		for(size_t j = 0; j < ops[i].size(); j++)
 		{
@@ -288,8 +285,8 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 
 	//rs.assign(rightSide.size(), vector<coeffType>(terms.size(), 0) );
 
-
-	rs.assign(rightSide.size(), vector<coeffType>(terms.size(), 0) );
+	size_t pad = __COEFF_FIELD_INTVECSIZE;
+	rs.assign(rightSide.size(), vector<coeffType>( (( terms.size()+pad-1 )/ pad ) * pad, 0) );
 	for(size_t i = 0; i < rightSide.size(); i++) {
 		size_t j = 0;
 		size_t k = 0;
@@ -309,27 +306,26 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 
 	#if 1 
 	vector<size_t> l(rs.size(),0);
-	for(map<const Term*, vector<pair<size_t, coeffType> >, TermComparator>::iterator it = pivotOpsOrdered.begin(); it != pivotOpsOrdered.end(); it++)
+	for(map<const Term*, vector<pair<size_t, coeffType> >, TermComparator>::reverse_iterator it = pivotOpsOrdered.rbegin(); it != pivotOpsOrdered.rend(); it++)
 	{
 		size_t o = pivots[it->first];
 		for(size_t i = 0; i < it->second.size(); i++)
 		{
 			size_t t = it->second[i].first;
-			ops[ l[ t ] ].push_back( F4Operation(t, o, it->second[i].second) );
-			l[ t ]++; // one operation per level, attention this also affects the following if-statements
-			if(l[ o ] < l[ t ]) 
-			{    
-				l[ o ] = l[ t ]; // oper at least one level earlier
-			}    
-			if(l[ t ] >= ops.size())
-			{    
-				ops.push_back( vector<F4Operation >() ); // take care that we have enough levels
+			if(l[ o ] > l[t]) {
+				l[t] = l[o];
+			}
+			ops[ l[t] ].push_back( F4Operation(t,o,it->second[i].second) );
+			l[t]++; // one operation per level, attention this also affects the following if-statements
+
+			if(l[t] >= ops.size()) {
+				ops.push_back( vector<F4Operation>() );
 			}
 		}
 	}
 	#else
 	size_t l = 0;
-	for(map<const Term*, vector<pair<size_t, coeffType> >, TermComparator>::iterator it = pivotOpsOrdered.begin(); it != pivotOpsOrdered.end(); it++)
+	for(map<const Term*, vector<pair<size_t, coeffType> >, TermComparator>::reverse_iterator it = pivotOpsOrdered.rbegin(); it != pivotOpsOrdered.rend(); it++)
 	{
 		size_t o = pivots[it->first];
 		for(size_t i = 0; i < it->second.size(); i++)
@@ -422,7 +418,7 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 		if(!polys.empty()) {
 			updatePairs(pairs, polys);
 		}
-		cout << pairs.size() << " pairs\n";
+		//cout << pairs.size() << " pairs\n";
 		/*size_t t = 0;	
 		size_t k = 0;
 		for(size_t i = 0; i < groebnerBasis.size(); i++)
@@ -433,7 +429,7 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 			}
 		}*/
 	}
-	//cout << "R-Time: \t" << reductionTime << "\n";
+	cout << "Reduction (s): \t" << reductionTime << "\n";
 	//cout << "P-Time: \t" << prepareTime << "\n";
 	//cout << "U-Time: \t" << updateTime << "\n";
 	vector<Polynomial> result;
@@ -442,6 +438,6 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 		if(inGroebnerBasis[i])
 			result.push_back(groebnerBasis[i]);
 	}
-	cout << "Runtime:\t" << seconds() - start << "\n";
+	cout << "Runtime (s):\t" << seconds() - start << "\n";
 	return result;
 }

@@ -24,7 +24,7 @@ CXX = /usr/bin/g++
 # F4_THREADS is only a default parameter, the thread count can also be set at runtime.
 # COEFF_BITS defines the length of the coefficents. If you need fields larger than 32003,
 # you have to use 32 oder 64.
-# F4_USE_SSE1 enables sse optimizations in the field arithmetics
+# F4_USE_SSE1 enables sse optimizations in the field arithmetics (currently requires GCC)
 # 
 # the following CXXFLAGS are for the GNU COMPILER:
 CXXFLAGS = -fPIC -Wall -fopenmp -O2 -march=native -pipe -D'F4_THREADS=1' -D'F4_COEFF_BITS=16' -D'F4_USE_SSE=1' -std=c++0x

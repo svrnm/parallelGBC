@@ -134,11 +134,6 @@ class CoeffField
 			return b > a ? a + modn - b : a - b;
 		}
 
-		void prepare(size_t size) {
-			 s = size - (size % (__COEFF_FIELD_INTVECSIZE));
-			 limit = s / (__COEFF_FIELD_INTVECSIZE);
-		}
-
 		#if F4_USE_SSE
 		void mulSub(vector<coeffType>& t, vector<coeffType>& o, coeffType c) const {
 			vector<coeffType> tmp(o);
@@ -152,12 +147,11 @@ class CoeffField
 			}
 			intvec* y = (intvec*) &(tmp[0]);
 			intvec* x = (intvec*) &(t[0]);
-			for(size_t k = 0; k < limit; k++) {
-				x[k] += (__COEFF_FIELD_GTVEC(y[k], x[k]) & modnvec.v) - y[k];
+		
+			for(size_t k = 0; k < t.size() / (__COEFF_FIELD_INTVECSIZE); k++) {
+				x[k+0] += (__COEFF_FIELD_GTVEC(y[k+0], x[k+0]) & modnvec.v) - y[k+0];
 			}
-			for(size_t k = s; k < t.size(); k++) {
-				t[k] = tmp[k] > t[k] ? t[k] + modn - tmp[k] : t[k] - tmp[k];
-			}
+			
 			tmp.clear();
 		}
 		#else

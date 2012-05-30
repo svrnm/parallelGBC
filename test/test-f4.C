@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
 	
 	// Is there a file provided?
 	if(argc < 2) {
-		cerr << "Please provide a file.\n";
+		cerr << "Please provide a file and a optional number of threads.\n";
 		exit(-1);
 	}
 	
@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
 	// Compute the groebner basis for the polynomials in 'list' with 'threads' threads/processors 
 	vector<Polynomial> result = f4(list, o, cf, threads);
 	// Return the size of the groebner basis
-	cout << result.size() << "\n";
+	cout << "Size of GB:\t" << result.size() << "\n";
 	// Clean up your memory
 	delete o;
 	delete cf;

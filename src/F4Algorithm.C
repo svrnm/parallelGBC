@@ -439,7 +439,6 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 		if(inGroebnerBasis[i])
 			result.push_back(groebnerBasis[i]);
 	}
-	#if
 	cout << "Runtime (s):\t" << seconds() - start << "\n";
 	return result;
 }

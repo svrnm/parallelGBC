@@ -18,7 +18,7 @@
 #include "../include/Polynomial.H"
 #include "../include/F4Utils.H"
 
-ostream& operator<< (std::ostream &out, const Term &term)
+ostream& operator<< (std::ostream &out, const Term& term)
 { 
 	if(term.deg() > 0)
 	{
@@ -45,7 +45,7 @@ ostream& operator<< (std::ostream &out, const Term &term)
 	return out;
 } 
 
-bool Term::isDivisibleBy(const Term* other) const {
+bool TermInstance::isDivisibleBy(const TermInstance* other) const {
 	if(other == this) { return true; }
 	if(other->degree > degree) { return false; }
 	for(size_t i = 0; i < owner->N; i++) {
@@ -54,8 +54,8 @@ bool Term::isDivisibleBy(const Term* other) const {
 	return true;
 }
 
-const Term* Term::lcm(const Term* other) const {
-	Term* t = new Term(this->owner);
+const TermInstance* TermInstance::lcm(const TermInstance* other) const {
+	TermInstance* t = new TermInstance(this->owner);
 	for(size_t i = 0; i < owner->N; i++) {
 		t->indets[i] = max(indets[i], other->indets[i]);
 	}
@@ -64,26 +64,26 @@ const Term* Term::lcm(const Term* other) const {
 	return owner->createElement(t);
 }
 
-vector<const Term*> Term::mulAll(Polynomial& in, int threads, double& timer) const {
-	vector<const Term*> result(in.size(), NULL);
+vector<Term> Term::mulAll(Polynomial& in, int threads, double& timer) const {
+	vector<Term> result;
 
-	if(this->degree == 0) {
+	if(this->deg() == 0) {
 		for(size_t i = 0; i < in.size(); i++) {
-			result[i] = in[i].second;
+			result.push_back( in[i].second );
 		}
 		return result;
 	}	
 
 	//double helper = seconds();
-	vector<Term*> tmp(in.size(), NULL);
+	//vector<TermInstance*> tmp(in.size(), NULL);
 	// This doesn't really speedup (the critical section takes the most computation time)
-	#pragma omp parallel for num_threads( 1 ) 
+	//#pragma omp parallel for num_threads( 1 ) 
 	for(size_t i = 0; i < in.size(); i++) {
-		tmp[i] = new Term(owner, in[i].second->indets, indets);
-		#pragma omp critical
-		result[i] = owner->createElement(tmp[i]);
+		//result[i] = Term(owner, in[i].second->indets, indets);
+		result.push_back( in[i].second.mul( *this ) );
+		//#pragma omp critical
+		//result[i] = owner->createElement(tmp[i]);
 	}
 	//timer += seconds() - helper;
 	return result;
 }
-

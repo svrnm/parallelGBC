@@ -31,7 +31,7 @@ ostream& operator<< (ostream &out, const Polynomial &poly)
 	}
 	for(size_t i = 0; i < poly.size(); i++) 
 	{
-		std::pair<coeffType, const Term*> t = poly[i];
+		std::pair<coeffType, Term> t = poly[i];
 		if(!first)
 		{
 			out << " + ";
@@ -41,7 +41,7 @@ ostream& operator<< (ostream &out, const Polynomial &poly)
 		{
 			out << t.first << "*";
 		}
-		out << *t.second;
+		out << t.second;
 	}
 	return out;
 }
@@ -63,18 +63,18 @@ ostream& operator<< (ostream& out, const vector<Polynomial> &polys)
 	return out;
 }
 
-Polynomial Polynomial::mul(const Term* t) const {
+Polynomial Polynomial::mul(const Term& t) const {
 	vector<Monomial> ms(monomials.begin(), monomials.end());
 	for(size_t i = 0; i < size(); i++) {
 		//ts.push_back(t->mul(terms[i]));
-		ms[i].second = t->mul(ms[i].second);
+		ms[i].second = t.mul(ms[i].second);
 	}
 	return Polynomial(ms);
 }
 
-void Polynomial::mulBy(const Term* t) {
+void Polynomial::mulBy(const Term& t) {
 	for(size_t i = 0; i < size(); i++) {
-		monomials[i].second = t->mul(monomials[i].second);
+		monomials[i].second = t.mul(monomials[i].second);
 	}
 }
 
@@ -128,7 +128,7 @@ Polynomial Polynomial::createInstance(const string& s, TMonoid& m, degreeType mi
 			strs2[1] = "x" + strs2[1];
 			t = strs2[1];
 		}
-		monomials.push_back(make_pair(co, m.createElement(t, min)));
+		monomials.push_back(make_pair(co, Term(&m, t, min)));
 	}
 	Polynomial result(monomials, true);
 	return result;

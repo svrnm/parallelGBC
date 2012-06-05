@@ -37,20 +37,26 @@
 #endif
 
 // Define some variables and functions in dependency of F4_COEFF_BITS
-#if F4_COEFF_BITS <= 16
-	// 8*16 = 128 bits for the SSE vector.
-	#define __COEFF_FIELD_INTVECSIZE 8
-	// The build in GCC function to compare 8 16-bit integers at once
-	#define __COEFF_FIELD_GTVEC(x,y) (__builtin_ia32_pcmpgtw128 (x,y))
-	// The used type
-	#define __COEFF_FIELD_NUMBERTYPE int16_t
+#if F4_COEFF_BITS <= 8
+	#define __COEFF_FIELD_INTVECSIZE 16
+	#define __COEFF_FIELD_GTVEC(x,y) (__builtin_ia32_pcmpgtb128 (x,y))
+	#define __COEFF_FIELD_NUMBERTYPE char
 #else
-	// 4*32 = 128 bits for the SSE vector
-	#define __COEFF_FIELD_INTVECSIZE 4
-	// The build in GCC function to compare 4 32-bit integers at once
-	#define __COEFF_FIELD_GTVEC(x,y) (__builtin_ia32_pcmpgtd128 (x,y))
-	// The used type
-	#define __COEFF_FIELD_NUMBERTYPE int32_t
+	#if F4_COEFF_BITS <= 16
+		// 8*16 = 128 bits for the SSE vector.
+		#define __COEFF_FIELD_INTVECSIZE 8
+		// The build in GCC function to compare 8 16-bit integers at once
+		#define __COEFF_FIELD_GTVEC(x,y) (__builtin_ia32_pcmpgtw128 (x,y))
+		// The used type
+		#define __COEFF_FIELD_NUMBERTYPE int16_t
+	#else
+		// 4*32 = 128 bits for the SSE vector
+		#define __COEFF_FIELD_INTVECSIZE 4
+		// The build in GCC function to compare 4 32-bit integers at once
+		#define __COEFF_FIELD_GTVEC(x,y) (__builtin_ia32_pcmpgtd128 (x,y))
+		// The used type
+		#define __COEFF_FIELD_NUMBERTYPE int32_t
+	#endif
 #endif
 
 using namespace std;
@@ -127,7 +133,6 @@ class CoeffField
 			return logs[a];
 		}
 
-		// Attention: Not safe for b equal zero !
 		coeffType mulSub(coeffType a, coeffType b, coeffType c) const {
 			if(b == 0) { return a; }
 			b = exps[logs[b] + c];
@@ -138,10 +143,14 @@ class CoeffField
 		void mulSub(vector<coeffType>& t, vector<coeffType>& o, coeffType c) const {
 			vector<coeffType> tmp(o);
 			if(c != 1) {
-				c = logs[c];
+				coeffType lc = logs[c];
 				for(size_t k = 0; k < o.size(); k++) {
 					if(o[k] != 0) { 
-						tmp[k] = exps[logs[o[k]] + c]; 
+						if(o[k] == 1) {
+							tmp[k] = c;
+						} else {
+							tmp[k] = exps[logs[o[k]] + lc]; 
+						}
 					}
 				}
 			}

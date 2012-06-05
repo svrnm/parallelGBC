@@ -24,7 +24,7 @@
 
 using namespace std;
 
-typedef pair<coeffType, const Term*> Monomial;
+typedef pair<coeffType, Term> Monomial;
 
 class Polynomial {
 	private:
@@ -43,23 +43,23 @@ class Polynomial {
 		{ 
 			if(ms.size() > 0)
 			{ 
-				sugarDegree = ms[0].second->deg();
+				sugarDegree = ms[0].second.deg();
 			}
 			else
 			{ 
 				sugarDegree = 0;
 			}
 		}
-		Polynomial(const Term* t) {
+		Polynomial(const Term& t) {
 			monomials.push_back(make_pair(1, t));
-			sugarDegree = t->deg();
+			sugarDegree = t.deg();
 		}
 
 		Polynomial(vector<Monomial>& ms, bool purify) : monomials(ms)
 		{ 
 			if(ms.size() > 0)
 			{ 
-				sugarDegree = ms[0].second->deg();
+				sugarDegree = ms[0].second.deg();
 			}
 			if(purify)
 			{ 
@@ -92,9 +92,9 @@ class Polynomial {
 			return monomials.capacity();
 		}
 
-		Polynomial mul(const Term* t) const;
+		Polynomial mul(const Term& t) const;
 
-		void mulBy(const Term* t);
+		void mulBy(const Term& t);
 
 		bool isZero() const {
 			return monomials.size() < 1 || monomials[0].first == 0; // Attention 0*LT+k*T with k != 0 will break this!
@@ -110,11 +110,11 @@ class Polynomial {
 
 		void order(const TOrdering* O);
 
-		const Term* lcmLT(const Polynomial& other) const {
-			return LT()->lcm(other.LT());
+		Term lcmLT(const Polynomial& other) const {
+			return LT().lcm(other.LT());
 		}
 
-		const Term* LT() const {
+		Term LT() const {
 			return monomials[0].second;
 		}
 

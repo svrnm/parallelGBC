@@ -26,7 +26,7 @@
 using namespace boost;
 
 TMonoid::TMonoid(size_t N) : /*tls(N),*/ N(N), D(64/N) { 
-	one = new Term(this);
+	one = new TermInstance(this);
 	for(size_t i = 0; i < N; i++) {
 		one->set(i, 0);
 	}
@@ -38,25 +38,25 @@ TMonoid::TMonoid(size_t N) : /*tls(N),*/ N(N), D(64/N) {
 
 
 
-bool TMonoid::TermEquals::operator()(const Term* const t1, const Term* const t2) const 
+bool TMonoid::TermInstanceEquals::operator()(const TermInstance* const t1, const TermInstance* const t2) const 
 {
 	return t1->equal(t2);
 }
 
-size_t TMonoid::TermHash::operator()(const Term* const t) const {
+size_t TMonoid::TermInstanceHash::operator()(const TermInstance* const t) const {
 	return t->hash;
 } 
 
 TMonoid::~TMonoid() {
 
-	for(TermSet::iterator it = terms.begin(); it != terms.end(); it++) { 
+	for(TermInstanceSet::iterator it = terms.begin(); it != terms.end(); it++) { 
 		delete *it; 
 	}
 }
 
-const Term* TMonoid::createElement(Term* t)
+const TermInstance* TMonoid::createElement(TermInstance* t)
 {
-	pair<TermSet::iterator, bool> result = terms.insert(t);
+	pair<TermInstanceSet::iterator, bool> result = terms.insert(t);
 	if(!result.second) { 
 		delete t; 
 		return *(result.first);
@@ -65,20 +65,20 @@ const Term* TMonoid::createElement(Term* t)
 	}
 }
 
-const Term* TMonoid::createElement(vector<long>& v) 
+const TermInstance* TMonoid::createElement(const vector<degreeType>& v) 
 {
 	degreeType* r = (degreeType*)calloc(N, sizeof(degreeType));
 	long m = max(N, v.size());
 	for(long i = 0; i < m; i++) {
 		r[i] = (degreeType)v[i];
 	}
-	return createElement(new Term(this, r));
+	return createElement(new TermInstance(this, r));
 }
 
-const Term* TMonoid::createElement(const string& s, degreeType min) { 
+const TermInstance* TMonoid::createElement(const string& s, degreeType min) { 
 	degreeType* v = (degreeType*)calloc(N, sizeof(degreeType));
 	if(s == "1") {
-		//return createElement(new Term(this, v));
+		//return createElement(new TermInstance(this, v));
 		free(v);
 		return one;
 	} else {
@@ -100,5 +100,5 @@ const Term* TMonoid::createElement(const string& s, degreeType min) {
 			}
 		}
 	}
-	return createElement(new Term(this, v));
+	return createElement(new TermInstance(this, v));
 }

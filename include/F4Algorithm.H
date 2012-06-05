@@ -21,7 +21,8 @@
 #include <map>
 #include "../include/Term.H"
 #include "../include/Polynomial.H"
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
+#include <algorithm>
 #include <boost/bind.hpp>
 #include "../include/F4Utils.H"
 
@@ -35,13 +36,13 @@ using namespace boost;
 
 class F4Pair {
 	public:
-		const Term* LCM;
+		Term LCM;
 		size_t i;
 		size_t j;
 		bool marked;
 		degreeType sugar;
 
-		F4Pair(const Term* LCM, size_t i, size_t j, bool marked, degreeType sugar) : LCM(LCM), i(i), j(j), marked(marked), sugar(sugar)	 {};
+		F4Pair(const Term& LCM, size_t i, size_t j, bool marked, degreeType sugar) : LCM(LCM), i(i), j(j), marked(marked), sugar(sugar)	 {};
 };
 
 class F4PairComparator {
@@ -58,11 +59,11 @@ class F4PairComparator {
 
 class F4Pivot {
 	public:
-		const Term* column;
+		const Term column;
 		size_t row;
 		vector<pair<size_t, coeffType> > operations;
 
-		F4Pivot(const Term* column, size_t row) : column(column), row(row) {}
+		F4Pivot(const Term& column, size_t row) : column(column), row(row) {}
 
 		void addOperation(size_t row, coeffType factor) {
 			operations.push_back(make_pair(row, factor));
@@ -98,7 +99,7 @@ class F4 {
 		
 		void gauss(vector<vector<coeffType> >& matrix, size_t upper, vector<bool>& empty);
 		void pReduce(vector<vector<F4Operation> >& ops, vector<vector<coeffType> >& rs);
-		size_t prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4Operation> >& ops, set<const Term*, TermComparator>& terms, vector<vector<coeffType> >& rs);
+		size_t prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4Operation> >& ops, set<Term, Term::comparator>& terms, vector<vector<coeffType> >& rs);
 		void reduce(F4PairSet& pairs, vector<Polynomial>& polys);
 		void postReduce(vector<Polynomial>& polys);
 		void updatePairs(F4PairSet& pairs, vector<Polynomial>& polys, bool initial = false);

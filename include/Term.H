@@ -16,6 +16,7 @@
  */
 #ifndef TERM_H
 #define TERM_H
+#include <stdlib.h>
 #include <string.h>
 #include "TMonoid.H"
 #include "TOrdering.H"

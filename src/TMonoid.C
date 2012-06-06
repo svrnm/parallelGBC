@@ -24,6 +24,7 @@
 #include <iostream>
 
 using namespace boost;
+using namespace std;
 
 TMonoid::TMonoid(size_t N) : /*tls(N),*/ N(N), D(64/N) { 
 	one = new TermInstance(this);

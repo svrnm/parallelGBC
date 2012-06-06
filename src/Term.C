@@ -18,7 +18,7 @@
 #include "../include/Polynomial.H"
 #include "../include/F4Utils.H"
 
-ostream& operator<< (std::ostream &out, const Term& term)
+std::ostream& operator<< (std::ostream &out, const Term& term)
 { 
 	if(term.deg() > 0)
 	{
@@ -57,15 +57,15 @@ bool TermInstance::isDivisibleBy(const TermInstance* other) const {
 const TermInstance* TermInstance::lcm(const TermInstance* other) const {
 	TermInstance* t = new TermInstance(this->owner);
 	for(size_t i = 0; i < owner->N; i++) {
-		t->indets[i] = max(indets[i], other->indets[i]);
+		t->indets[i] = std::max(indets[i], other->indets[i]);
 	}
 	t->setDegree();
 	t->setHash();
 	return owner->createElement(t);
 }
 
-vector<Term> Term::mulAll(Polynomial& in, int threads, double& timer) const {
-	vector<Term> result;
+std::vector<Term> Term::mulAll(Polynomial& in, int threads, double& timer) const {
+	std::vector<Term> result;
 
 	if(this->deg() == 0) {
 		for(size_t i = 0; i < in.size(); i++) {

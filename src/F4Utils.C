@@ -16,6 +16,8 @@
 */
 #include "../include/F4Utils.H"
 
+using namespace std;
+
 template<typename T> ostream& operator<< (ostream& out, const vector<T>& v)
 {
   out << "[ ";

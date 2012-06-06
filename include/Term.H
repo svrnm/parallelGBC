@@ -22,14 +22,11 @@
 #include <unordered_set>
 #include <iostream>
 
-using namespace std;
-
 class Polynomial;
 
 class TermInstance {
-	public: 
-		TMonoid* const owner;
 	protected:
+		TMonoid* const owner;
 		degreeType degree;
 		size_t hash;
 		degreeType* indets;
@@ -71,6 +68,14 @@ class TermInstance {
 			return hash;
 		}
 
+		std::vector<degreeType> getValues() const {
+			std::vector<degreeType> result;
+			for(size_t i = 0; i < owner->N; i++) {
+				result.push_back(indets[i]);
+			}
+			return result;
+		}
+
 		// Multiplication constructor
 		TermInstance(TMonoid* const m, const degreeType* a, const degreeType* b) : owner(m) {
 			indets = alloc();
@@ -99,7 +104,7 @@ class TermInstance {
 			return owner->N;
 		}
 
-		const TMonoid* monoid() const {
+		TMonoid* monoid() const {
 			return owner;
 		}
 
@@ -126,14 +131,6 @@ class TermInstance {
 			return owner->createElement(result);
 		}
 
-		vector<long> getValues() const {
-			vector<long> v;
-			for(size_t i = 0; i < owner->N; i++) {
-				v.push_back( indets[i] );
-			}
-			return v;
-		}
-
 		bool equal(const TermInstance* other) const {
 			for(size_t i = 0; i < owner->N; i++) {
 				if(other->indets[i] != indets[i]) return false;
@@ -147,15 +144,18 @@ class TermInstance {
 
 class Term {
 	protected:
-		TMonoid* owner;
 		const TermInstance* instance;
 	public:
-		Term(TMonoid* owner, const std::vector<degreeType>& i) : owner(owner), instance(owner->createElement(i)) { }
-		Term(TMonoid* owner, const TermInstance* instance) : owner(owner), instance(instance) { }
-		Term(TMonoid* owner, const std::string& s, degreeType min) : owner(owner), instance(owner->createElement(s, min)) { }
+		Term(TMonoid* owner, const std::vector<degreeType>& i) : instance(owner->createElement(i)) { }
+		Term(TMonoid* owner, const TermInstance* instance) : instance(instance) { }
+		Term(TMonoid* owner, const std::string& s, degreeType min) : instance(owner->createElement(s, min)) { }
 
 		degreeType operator[](size_t i) const {
 			return instance->at(i);
+		}
+
+		TMonoid* monoid() const {
+			return instance->monoid();
 		}
 
 		degreeType deg() const {
@@ -167,15 +167,15 @@ class Term {
 		}
 
 		Term mul(const Term& other) const {
-			return Term(owner, instance->mul(other.instance));
+			return Term(instance->monoid(), instance->mul(other.instance));
 		}
 
 		Term lcm(const Term& other) const {
-			return Term(owner, instance->lcm(other.instance));
+			return Term(instance->monoid(), instance->lcm(other.instance));
 		}
 
 		Term div(const Term& other) const {
-			return Term(owner, instance->div(other.instance));
+			return Term(instance->monoid(), instance->div(other.instance));
 		}
 
 		bool equal(const Term& other) const {
@@ -196,7 +196,7 @@ class Term {
 
 		// Multiplies a set of terms with the current term
 		// Uses OpenMP-Parallelization
-		vector<Term> mulAll(Polynomial& in, int threads, double& timer) const;
+		std::vector<Term> mulAll(Polynomial& in, int threads, double& timer) const;
 		
 		class comparator {
 			public:
@@ -214,6 +214,10 @@ class Term {
 		size_t hash() const {
 			return instance->getHash();
 		}
+
+		std::vector<degreeType> getValues() {
+			return instance->getValues();
+		}
 };
 
 
@@ -230,5 +234,6 @@ namespace std
 }
 
 
-ostream& operator<< (ostream &out, const Term& term);
+std::ostream& operator<< (std::ostream &out, const Term& term);
+
 #endif

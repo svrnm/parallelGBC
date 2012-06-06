@@ -20,7 +20,6 @@
 #include <iostream>
 #include <vector>
 
-using namespace std;
 
 inline double seconds()
 {    
@@ -29,7 +28,7 @@ inline double seconds()
 	return (double)tv.tv_sec + ((double)tv.tv_usec)/1000000.0;
 }
 
-template<typename T> ostream& operator<< (ostream& out, const vector<T>& v);
+template<typename T> std::ostream& operator<< (std::ostream& out, const std::vector<T>& v);
 
-template<typename T> ostream& operator<< (ostream& out, const vector<vector<T> >& v);
+template<typename T> std::ostream& operator<< (std::ostream& out, const std::vector<std::vector<T> >& v);
 #endif

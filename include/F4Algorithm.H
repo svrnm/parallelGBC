@@ -32,8 +32,6 @@
 	#define __F4_ALGORITHM_THREADS 1
 #endif
 
-using namespace boost;
-
 class F4Pair {
 	public:
 		Term LCM;
@@ -61,12 +59,12 @@ class F4Pivot {
 	public:
 		const Term column;
 		size_t row;
-		vector<pair<size_t, coeffType> > operations;
+		std::vector<std::pair<size_t, coeffType> > operations;
 
 		F4Pivot(const Term& column, size_t row) : column(column), row(row) {}
 
 		void addOperation(size_t row, coeffType factor) {
-			operations.push_back(make_pair(row, factor));
+			operations.push_back(std::make_pair(row, factor));
 		}
 };
 
@@ -79,13 +77,13 @@ class F4Operation {
 		F4Operation(size_t target, size_t oper, coeffType factor) : target(target), oper(oper), factor(factor) {}
 };
 
-typedef set<F4Pair,F4PairComparator> F4PairSet;
+typedef std::set<F4Pair,F4PairComparator> F4PairSet;
 
 class F4 {
 	public:
 		CoeffField* field;
-		vector<Polynomial> groebnerBasis;
-		vector<bool> inGroebnerBasis;
+		std::vector<Polynomial> groebnerBasis;
+		std::vector<bool> inGroebnerBasis;
 		const TOrdering* O;
 		degreeType currentDegree;
 		int threads;
@@ -97,13 +95,13 @@ class F4 {
 
 		// select() is part of reduce
 		
-		void gauss(vector<vector<coeffType> >& matrix, size_t upper, vector<bool>& empty);
-		void pReduce(vector<vector<F4Operation> >& ops, vector<vector<coeffType> >& rs);
-		size_t prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4Operation> >& ops, set<Term, Term::comparator>& terms, vector<vector<coeffType> >& rs);
-		void reduce(F4PairSet& pairs, vector<Polynomial>& polys);
-		void postReduce(vector<Polynomial>& polys);
-		void updatePairs(F4PairSet& pairs, vector<Polynomial>& polys, bool initial = false);
-		vector<Polynomial> operator()(vector<Polynomial>& generators, const TOrdering* O, CoeffField* field, int threads = __F4_ALGORITHM_THREADS);
+		void gauss(std::vector<std::vector<coeffType> >& matrix, size_t upper, std::vector<bool>& empty);
+		void pReduce(std::vector<std::vector<F4Operation> >& ops, std::vector<std::vector<coeffType> >& rs);
+		size_t prepare(F4PairSet& pairs, std::vector<Polynomial>& polys, std::vector<std::vector<F4Operation> >& ops, std::set<Term, Term::comparator>& terms, std::vector<std::vector<coeffType> >& rs);
+		void reduce(F4PairSet& pairs, std::vector<Polynomial>& polys);
+		void postReduce(std::vector<Polynomial>& polys);
+		void updatePairs(F4PairSet& pairs, std::vector<Polynomial>& polys, bool initial = false);
+		std::vector<Polynomial> operator()(std::vector<Polynomial>& generators, const TOrdering* O, CoeffField* field, int threads = __F4_ALGORITHM_THREADS);
 };
 
 #endif

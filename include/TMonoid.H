@@ -22,7 +22,6 @@
 #include <unordered_set>
 #include "F4Utils.H"
 
-using namespace std;
 
 #ifndef F4_DEGREE_BITS
 #ifdef F4_COEFF_BITS
@@ -54,7 +53,7 @@ class TMonoid {
 		std::size_t operator()(const TermInstance* const t ) const;
 	};
 
-		typedef unordered_set<TermInstance*, TermInstanceHash, TermInstanceEquals> TermInstanceSet;
+		typedef std::unordered_set<TermInstance*, TermInstanceHash, TermInstanceEquals> TermInstanceSet;
 		TermInstanceSet terms;
 		TermInstance* one;
 
@@ -64,8 +63,8 @@ class TMonoid {
 		TMonoid(size_t N);
 		
 
-		const TermInstance* createElement(const string& s, degreeType min);
-		const TermInstance* createElement(const vector<degreeType>& v);
+		const TermInstance* createElement(const std::string& s, degreeType min);
+		const TermInstance* createElement(const std::vector<degreeType>& v);
 		const TermInstance* createElement(TermInstance* t);
 
 		size_t size() const {

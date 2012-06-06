@@ -18,6 +18,8 @@
 #include <stdio.h>
 #define BREAKPOINT {while(getchar() != '\n');}
 
+using namespace std;
+
 void F4::updatePairs(F4PairSet& pairs, vector<Polynomial>& polys, bool initial) 
 {
 	double timer = seconds();
@@ -225,7 +227,7 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 	tmp.clear();
 	// SELECTION END
 
-	cout << index << " pairs\n";
+	//cout << index << " pairs\n";
 	size_t upper = 2*index;
 
 	unordered_map<Term, vector<pair<size_t, coeffType> > > pivotOps;
@@ -378,7 +380,7 @@ void F4::reduce(F4PairSet& pairs, vector<Polynomial>& polys)
 			{
 				if(rs[i][j] != 0)
 				{
-					p.push_back(make_pair(rs[i][j], *it));
+					p.push_back(rs[i][j], *it);
 				}
 				j++;
 			}
@@ -430,7 +432,7 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 			}
 		}*/
 	}
-	cout << "Reduction (s): \t" << reductionTime << "\n";
+	//cout << "Reduction (s): \t" << reductionTime << "\n";
 	//cout << "P-Time: \t" << prepareTime << "\n";
 	//cout << "U-Time: \t" << updateTime << "\n";
 	vector<Polynomial> result;
@@ -439,6 +441,6 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 		if(inGroebnerBasis[i])
 			result.push_back(groebnerBasis[i]);
 	}
-	cout << "Runtime (s):\t" << seconds() - start << "\n";
+	//cout << "Runtime (s):\t" << seconds() - start << "\n";
 	return result;
 }

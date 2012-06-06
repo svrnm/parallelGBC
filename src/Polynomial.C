@@ -21,6 +21,7 @@
 #include <boost/regex.hpp>
 
 using namespace boost;
+using namespace std;
 
 ostream& operator<< (ostream &out, const Polynomial &poly) 
 {
@@ -64,41 +65,45 @@ ostream& operator<< (ostream& out, const vector<Polynomial> &polys)
 }
 
 Polynomial Polynomial::mul(const Term& t) const {
-	vector<Monomial> ms(monomials.begin(), monomials.end());
+	//vector<Monomial> ms(monomials.begin(), monomials.end());
+	vector<Term> ts(terms.begin(), terms.end());
+	vector<coeffType> cs(coeffs.begin(), coeffs.end());
 	for(size_t i = 0; i < size(); i++) {
 		//ts.push_back(t->mul(terms[i]));
-		ms[i].second = t.mul(ms[i].second);
+		//ms[i].second = t.mul(ms[i].second);
+		ts[i] = t.mul(ts[i]);
 	}
-	return Polynomial(ms);
+	return Polynomial(cs,ts);
 }
 
 void Polynomial::mulBy(const Term& t) {
 	for(size_t i = 0; i < size(); i++) {
-		monomials[i].second = t.mul(monomials[i].second);
+		terms[i] = t.mul(terms[i]);
 	}
 }
 
 void Polynomial::normalize(const CoeffField* field) {
-	if(monomials.size() > 0 && monomials[0].first != 0) {
-		coeffType f = field->inv(monomials[0].first);
-		monomials[0].first = 1;
+	if(coeffs.size() > 0 && coeffs[0] != 0) {
+		coeffType f = field->inv(coeffs[0]);
+		coeffs[0] = 1;
 		for(size_t i = 1; i < size(); i++) {
-			monomials[i].first = field->mul(monomials[i].first, f);
+			coeffs[i] = field->mul(coeffs[i], f);
 		}
 	}
 }
 
 void Polynomial::mulBy(coeffType l, const CoeffField* field) {
 	for(size_t i = 0; i < size(); i++) {
-		monomials[i].first = field->mul(monomials[i].first, l);
+		coeffs[i] = field->mul(coeffs[i], l);
 	}
 }
 
 void Polynomial::bringIn(const CoeffField* field, bool normalize) {
-	for(size_t i = 0; i < monomials.size();) {
-		monomials[i].first = ((monomials[i].first % field->modn) + field->modn) % field->modn;
-		if(monomials[i].first == 0) {
-			monomials.erase(monomials.begin() + i);
+	for(size_t i = 0; i < coeffs.size();) {
+		coeffs[i] = ((coeffs[i] % field->modn) + field->modn) % field->modn;
+		if(coeffs[i] == 0) {
+			coeffs.erase(coeffs.begin() + i);
+			terms.erase(terms.begin() + i);
 		} else {
 			i++;
 		}
@@ -134,13 +139,24 @@ Polynomial Polynomial::createInstance(const string& s, TMonoid& m, degreeType mi
 	return result;
 }
 
+// TODO: Fix this by implementing RandomAccessIterator for Polynomials
 void Polynomial::order(const TOrdering* O) {
 	MonomialComparator m(O);
-	sort(monomials.begin(), monomials.end(), m);
+	vector<Monomial> ms;
+	for(size_t i = 0; i < terms.size(); i++) {
+		ms.push_back(make_pair(coeffs[i], terms[i]));
+	}
+	sort(ms.begin(), ms.end(), m);
+	terms.clear();
+	coeffs.clear();
+	for(size_t i = 0; i < ms.size(); i++) {
+		terms.push_back(ms[i].second);
+		coeffs.push_back(ms[i].first);
+	}
 }
 
 void Polynomial::sub(const Polynomial& other, const TOrdering* O, const CoeffField* f) {
-	vector<Monomial>::iterator m1 = monomials.begin();
+	/*vector<Monomial>::iterator m1 = monomials.begin();
 	vector<Monomial>::const_iterator m2 = other.monomials.begin();
 	vector<Monomial> result;
 	back_insert_iterator<vector<Monomial> > r(result);
@@ -170,7 +186,7 @@ void Polynomial::sub(const Polynomial& other, const TOrdering* O, const CoeffFie
 	} else if(m2 == other.monomials.end()) {
 		copy(m1,monomials.end(),r);
 	}
-	swap(monomials, result);
+	swap(monomials, result);*/
 }
 
 vector<Polynomial> Polynomial::createList(const string& s, TMonoid& m, degreeType min) {

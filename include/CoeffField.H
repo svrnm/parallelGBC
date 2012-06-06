@@ -59,8 +59,6 @@
 	#endif
 #endif
 
-using namespace std;
-
 // define the type for coefficients
 typedef __COEFF_FIELD_NUMBERTYPE coeffType;
 
@@ -84,9 +82,9 @@ class CoeffField
 
 	private:
 		// precalculated exponents and logarithms
-		vector<coeffType> exps;
-		vector<coeffType> logs;
-		vector<coeffType> invs;
+		std::vector<coeffType> exps;
+		std::vector<coeffType> logs;
+		std::vector<coeffType> invs;
 
 		// modules minus 1
 		const coeffType modnM1;
@@ -140,8 +138,8 @@ class CoeffField
 		}
 
 		#if F4_USE_SSE
-		void mulSub(vector<coeffType>& t, vector<coeffType>& o, coeffType c) const {
-			vector<coeffType> tmp(o);
+		void mulSub(std::vector<coeffType>& t, std::vector<coeffType>& o, coeffType c) const {
+			std::vector<coeffType> tmp(o);
 			if(c != 1) {
 				coeffType lc = logs[c];
 				for(size_t k = 0; k < o.size(); k++) {
@@ -164,7 +162,7 @@ class CoeffField
 			tmp.clear();
 		}
 		#else
-		void mulSub(vector<coeffType>& t, vector<coeffType>& o, coeffType c) const {
+		void mulSub(std::vector<coeffType>& t, std::vector<coeffType>& o, coeffType c) const {
 			c = logs[c];
 			for(size_t k = 0; k < o.size(); k++) {
 				if(o[k] != 0) {

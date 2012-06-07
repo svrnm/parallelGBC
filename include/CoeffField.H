@@ -149,15 +149,6 @@ class CoeffField
 				}
 			}
 
-			if(c != 1) {
-				coeffType lc = logs[c];
-				for(size_t k = 0; k < o.size(); k++) {
-					if(o[k] != 0) { 
-						tmp[k] = exps[logs[o[k]] + lc]; 
-					}
-				}
-			}
-
 
 			intvec* y = (intvec*) &(tmp[0]);
 			intvec* x = (intvec*) &(t[0]);

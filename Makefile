@@ -55,3 +55,7 @@ clean:
 	$(MAKE) -C src objclean
 	$(MAKE) -C test objclean
 	rm -f lib/*.a
+
+# Do primitive checks
+check: test
+	./test/RunTests.sh

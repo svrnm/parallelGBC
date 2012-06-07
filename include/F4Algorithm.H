@@ -69,13 +69,20 @@ class F4Pivot {
 		}
 };
 
-class F4Operation {
-	public:
-		size_t target;
-		size_t oper;
-		coeffType factor;
+struct F4Operations {
+		std::vector<size_t> targets;
+		std::vector<size_t> opers;
+		std::vector<coeffType> factors;
 
-		F4Operation(size_t target, size_t oper, coeffType factor) : target(target), oper(oper), factor(factor) {}
+		void push_back(size_t t, size_t o, coeffType f) {
+			targets.push_back( t );
+			opers.push_back( o );
+			factors.push_back( f );
+		}
+
+		size_t size() {
+			return targets.size();
+		}
 };
 
 typedef std::set<F4Pair,F4PairComparator> F4PairSet;
@@ -111,8 +118,8 @@ class F4 {
 		// select() is part of reduce
 		
 		void gauss(std::vector<std::vector<coeffType> >& matrix, size_t upper, std::vector<bool>& empty);
-		void pReduce(std::vector<std::vector<F4Operation> >& ops, std::vector<std::vector<coeffType> >& rs);
-		size_t prepare(F4PairSet& pairs, std::vector<Polynomial>& polys, std::vector<std::vector<F4Operation> >& ops, std::set<Term, Term::comparator>& terms, std::vector<std::vector<coeffType> >& rs);
+		void pReduce(std::vector<F4Operations>& ops, std::vector<std::vector<coeffType> >& rs);
+		size_t prepare(F4PairSet& pairs, std::vector<Polynomial>& polys, std::vector<F4Operations>& ops, std::set<Term, Term::comparator>& terms, std::vector<std::vector<coeffType> >& rs);
 		void reduce(F4PairSet& pairs, std::vector<Polynomial>& polys);
 		void postReduce(std::vector<Polynomial>& polys);
 		void updatePairs(F4PairSet& pairs, std::vector<Polynomial>& polys, bool initial = false);

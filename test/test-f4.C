@@ -51,9 +51,15 @@ int main(int argc, char* argv[]) {
 	if(argc > 2) {
 		istringstream( argv[2] ) >> threads;
 	}
+	// Set verbosity.
 	int verbosity = 0;
 	if(argc > 3) {
 		istringstream( argv[3] ) >> verbosity;
+	}
+	// Yeah, one more parameter: Print the groebner basis?
+	int printGB = 0;
+	if(argc > 4) {
+		istringstream( argv[4] ) >> printGB;
 	}
 	// Read the provided input file. Example still below.
 	fstream filestr (argv[1], fstream::in);
@@ -100,14 +106,18 @@ int main(int argc, char* argv[]) {
 	// Compute the groebner basis for the polynomials in 'list' with 'threads' threads/processors 
 	vector<Polynomial> result = f4(list, o, cf, threads, verbosity);
 	// Return the size of the groebner basis
-	cout << "Size of GB:\t" << result.size() << "\n";
-	/*for(size_t i = 0; i < result.size(); i++) {
-		if(i > 0) {
-			cout << ", ";
+	if(printGB > 0)
+	{
+		for(size_t i = 0; i < result.size(); i++) {
+			if(i > 0) {
+				cout << ", ";
+			}
+			cout << result[i];
 		}
-		cout << result[i];
+		cout << "\n";
+	} else {
+		cout << "Size of GB:\t" << result.size() << "\n";
 	}
-	cout << "\n";*/
 	// Clean up your memory
 	delete o;
 	delete cf;

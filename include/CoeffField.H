@@ -144,19 +144,26 @@ class CoeffField
 				coeffType lc = logs[c];
 				for(size_t k = 0; k < o.size(); k++) {
 					if(o[k] != 0) { 
-						if(o[k] == 1) {
-							tmp[k] = c;
-						} else {
-							tmp[k] = exps[logs[o[k]] + lc]; 
-						}
+						tmp[k] = exps[logs[o[k]] + lc]; 
 					}
 				}
 			}
+
+			if(c != 1) {
+				coeffType lc = logs[c];
+				for(size_t k = 0; k < o.size(); k++) {
+					if(o[k] != 0) { 
+						tmp[k] = exps[logs[o[k]] + lc]; 
+					}
+				}
+			}
+
+
 			intvec* y = (intvec*) &(tmp[0]);
 			intvec* x = (intvec*) &(t[0]);
-		
-			for(size_t k = 0; k < t.size() / (__COEFF_FIELD_INTVECSIZE); k++) {
-				x[k+0] += (__COEFF_FIELD_GTVEC(y[k+0], x[k+0]) & modnvec.v) - y[k+0];
+			size_t n = t.size() / (__COEFF_FIELD_INTVECSIZE);	
+			for(size_t k = 0; k < n; k++) {
+				x[k] += (__COEFF_FIELD_GTVEC(y[k], x[k]) & modnvec.v) - y[k+0];
 			}
 			
 			tmp.clear();

@@ -142,6 +142,7 @@ void printPolyMatrix(vector<Polynomial>& v, const TOrdering* O)
 		for(;it != terms.end(); it++) { std::cout << " 0 "; }
 		std::cout << "\n";
 	}
+
 }
 
 void F4::gauss(vector<vector<coeffType> >& matrix, size_t upper, vector<bool>& empty)
@@ -184,19 +185,19 @@ void F4::gauss(vector<vector<coeffType> >& matrix, size_t upper, vector<bool>& e
 
 }
 
-void F4::pReduce(vector<vector<F4Operation> >& ops, vector<vector<coeffType> >& rs)
+void F4::pReduce(vector<F4Operations>& ops, vector<vector<coeffType> >& rs)
 {
 	for(size_t i = 0; i < ops.size(); i++) {
 		size_t n = ops[i].size();
 		#pragma omp parallel for num_threads( threads ) schedule( static )
 		for(size_t j = 0; j < n; j++)
 		{
-			field->mulSub(rs[ops[i][j].target], rs[ops[i][j].oper], ops[i][j].factor);
+			field->mulSub(rs[ops[i].targets[j]], rs[ops[i].opers[j]], ops[i].factors[j]);
 		}
 	}
 }
 
-size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4Operation> >& ops, set<Term, Term::comparator>& terms, vector<vector<coeffType> >& rs)
+size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<F4Operations>& ops, set<Term, Term::comparator>& terms, vector<vector<coeffType> >& rs)
 {
 	double timer = seconds();
 	// SELECTION
@@ -231,7 +232,7 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 	vector<vector<Monomial> > rightSide;
 	rightSide.reserve(rows.size());
 
-	double testtimer = 0;
+	//double testtimer = 0;
 
 	for(size_t i = 0; i < rows.size(); i++) 
 	{
@@ -301,7 +302,7 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 
 	map<Term, vector<pair<size_t, coeffType> >, Term::comparator> pivotOpsOrdered(pivotOps.begin(), pivotOps.end(), tog);
 	pivotOps.clear();
-	ops.push_back( vector<F4Operation >() );
+	ops.push_back( F4Operations() );
 
 	#if 1 
 	vector<size_t> l(rs.size(),0);
@@ -314,11 +315,11 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 			if(l[ o ] > l[t]) {
 				l[t] = l[o];
 			}
-			ops[ l[t] ].push_back( F4Operation(t,o,it->second[i].second) );
+			ops[ l[t] ].push_back( t,o,it->second[i].second );
 			l[t]++; // one operation per level, attention this also affects the following if-statements
 
 			if(l[t] >= ops.size()) {
-				ops.push_back( vector<F4Operation>() );
+				ops.push_back( F4Operations() );
 			}
 		}
 	}
@@ -330,10 +331,10 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 		for(size_t i = 0; i < it->second.size(); i++)
 		{
 			size_t t = it->second[i].first;
-			ops[ l ].push_back( F4Operation(t, o, it->second[i].second) );
+			ops[ l ].push_back( t, o, it->second[i].second );
 		}
 		l++;
-		ops.push_back( vector<F4Operation>() );
+		ops.push_back( F4Operations() );
 	}
 	#endif
 	pivotOpsOrdered.clear();
@@ -348,7 +349,7 @@ void F4::reduce(F4PairSet& pairs, vector<Polynomial>& polys)
 {
 	Term::comparator tog(O, true);
 	set<Term, Term::comparator> terms(tog);
-	vector<vector<F4Operation> > ops;
+	vector<F4Operations > ops;
 	vector<vector<coeffType> > rs;
 	size_t upper = prepare(pairs, polys, ops, terms, rs);
 

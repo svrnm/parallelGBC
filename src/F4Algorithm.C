@@ -241,15 +241,14 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 		// For the pivot rows (even rows and lower part) we start at 1 
 
 		// precalculated monomials
-		// 50%
 		Term ir = rows[i].second.div(groebnerBasis[currentRow].LT());
-		vector<Term> pcm = ir.mulAll(groebnerBasis[currentRow], threads, testtimer);
 
-		// 30%	
 		for(size_t j =  (i > upper || i % 2 == 0 ? 1 : 0);  j < groebnerBasis[currentRow].size() ; j++) 
 		{
-			coeffType coeff = groebnerBasis[currentRow][j].first;
-			Term t = pcm[j];
+			coeffType coeff = groebnerBasis[currentRow].coeff(j);
+			// 50% - inserting in the hash map is expensive
+			Term t = ir.mul(groebnerBasis[currentRow].term(j));
+			
 			bool wontFound = termsUnordered.count(t) > 0;	
 			bool found = false;
 

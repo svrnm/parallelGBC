@@ -146,9 +146,9 @@ class TermInstance {
 class Term {
 	protected:
 		const TermInstance* instance;
+		Term(TMonoid* owner, const TermInstance* instance) : instance(instance) { }
 	public:
 		Term(TMonoid* owner, const std::vector<degreeType>& i) : instance(owner->createElement(i)) { }
-		Term(TMonoid* owner, const TermInstance* instance) : instance(instance) { }
 		Term(TMonoid* owner, const std::string& s, degreeType min) : instance(owner->createElement(s, min)) { }
 
 		degreeType operator[](size_t i) const {
@@ -180,7 +180,11 @@ class Term {
 		}
 
 		bool equal(const Term& other) const {
-			return instance->equal(other.instance);
+			if( instance == other.instance ) {
+				return true;
+			} else {
+				return instance->equal(other.instance);	
+			}
 		}
 
 		bool operator==(const Term& other) const {

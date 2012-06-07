@@ -15,8 +15,8 @@ reading will follow in later releases (some translations have to be done...)
 
 
 REQUIREMENTS
-* A compiler which supports OpenMP and C++11 (GCC is fine)
-* A processor which has SSE, if not disable it in the Makefile.rules
+* A compiler which supports OpenMP and C++0x / C++11 (GCC is fine)
+* A processor which has SSE2, if not disable it in the Makefile.rules
 * Several processors if you want to use the parallelization (dual or quadcores, etc.)
 
 INSTALLATION

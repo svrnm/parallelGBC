@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <boost/bind.hpp>
+#include <iostream>
 #include "../include/F4Utils.H"
 
 #ifdef F4_THREADS
@@ -87,6 +88,20 @@ class F4 {
 		const TOrdering* O;
 		degreeType currentDegree;
 		int threads;
+		/* Verbosity, which can be changed during runtime, nothing which should
+		 * influence performance.
+		 *
+		 * 1 - Runtime
+		 * 2 - Reduction time
+		 * 4 - Prepare time
+		 * 8 - Update time
+		 * 16 - Print sugar degree during reduction step
+		 * 32 - Print time of reduction step
+		 * 64 - Print matrix size during reduction step 
+		 */
+		int verbosity;
+		// There we write verbose messages
+		std::ostream* out;
 
 		// statistics
 		double reductionTime;
@@ -101,7 +116,7 @@ class F4 {
 		void reduce(F4PairSet& pairs, std::vector<Polynomial>& polys);
 		void postReduce(std::vector<Polynomial>& polys);
 		void updatePairs(F4PairSet& pairs, std::vector<Polynomial>& polys, bool initial = false);
-		std::vector<Polynomial> operator()(std::vector<Polynomial>& generators, const TOrdering* O, CoeffField* field, int threads = __F4_ALGORITHM_THREADS);
+		std::vector<Polynomial> operator()(std::vector<Polynomial>& generators, const TOrdering* O, CoeffField* field, int threads = __F4_ALGORITHM_THREADS, int verbosity = 0, std::ostream& output = std::cout);
 };
 
 #endif

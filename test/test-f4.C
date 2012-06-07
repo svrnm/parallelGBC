@@ -51,7 +51,10 @@ int main(int argc, char* argv[]) {
 	if(argc > 2) {
 		istringstream( argv[2] ) >> threads;
 	}
-
+	int verbosity = 0;
+	if(argc > 3) {
+		istringstream( argv[3] ) >> verbosity;
+	}
 	// Read the provided input file. Example still below.
 	fstream filestr (argv[1], fstream::in);
 	std::string s,t;
@@ -92,13 +95,19 @@ int main(int argc, char* argv[]) {
 	// doing everything twice shouldn't harm.
 	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::order), _1, o));
 	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::bringIn), _1, cf, false));
-	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::normalize), _1, cf));
 	// Create the f4 computer.
 	F4 f4;
 	// Compute the groebner basis for the polynomials in 'list' with 'threads' threads/processors 
-	vector<Polynomial> result = f4(list, o, cf, threads);
+	vector<Polynomial> result = f4(list, o, cf, threads, verbosity);
 	// Return the size of the groebner basis
-	cout << "Size of GB:\t" << result.size() << "\n";
+	//cout << "Size of GB:\t" << result.size() << "\n";
+	for(size_t i = 0; i < result.size(); i++) {
+		if(i > 0) {
+			cout << ", ";
+		}
+		cout << result[i];
+	}
+	cout << "\n";
 	// Clean up your memory
 	delete o;
 	delete cf;

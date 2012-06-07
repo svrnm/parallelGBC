@@ -33,9 +33,24 @@ contact the author
 
 TESTING
 Compute the degree reverse lexicogrpahic gröbner basis of cyclic-8 with 4 threads
+and a lot of verbosity
 
 cd test/;
-./test/test-f4 ../input/cyclic8.txt 4
+./test/test-f4 ../input/cyclic8.txt 4 127
+
+VERBOSITY
+Verbosity, which can be changed during runtime, nothing which should
+influence performance. It' is an additional parameter for the F4 operator().
+Additionally you can give an output stream, which should be used for output.
+Default ist no verbosity and std::cout as output stream.
+		
+1 - Runtime
+2 - Reduction time
+4 - Prepare time
+8 - Update time
+16 - Print sugar degree during reduction step
+32 - Print time of reduction step
+64 - Print matrix size during reduction step 
 
 USAGE AND EXAMPLE
 If you want to use the code for your own project see test/test-f4.C as example

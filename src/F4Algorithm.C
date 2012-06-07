@@ -108,7 +108,7 @@ void F4::updatePairs(F4PairSet& pairs, vector<Polynomial>& polys, bool initial)
 		}
 
 	}
-	//cout << "UPDATE:\t" << seconds() - timer << "\n";
+	//*out << "UPDATE:\t" << seconds() - timer << "\n";
 	updateTime += seconds() - timer;
 }
 
@@ -132,21 +132,15 @@ void printPolyMatrix(vector<Polynomial>& v, const TOrdering* O)
 	}
 
 
-	for(set<Term, Term::comparator>::iterator it = terms.begin(); it != terms.end(); it++)
-	{
-		//cout << **it << " (" << *it << ") ; ";
-	}
-	//cout << "\n";
-
 	for(size_t i = 0; i < v.size(); i++) {
 		set<Term, Term::comparator>::iterator it = terms.begin();
 		for(size_t j = 0; j < v[i].size(); j++) {
-			for(;*it != v[i][j].second;it++) { cout << " x "; }
-			cout << " " << v[i][j].first << " ";
+			for(;*it != v[i][j].second;it++) { std::cout << " 0 "; }
+			std::cout << " " << v[i][j].first << " ";
 			it++;
 		}
-		for(;it != terms.end(); it++) { cout << " y "; }
-		cout << "\n";
+		for(;it != terms.end(); it++) { std::cout << " 0 "; }
+		std::cout << "\n";
 	}
 }
 
@@ -210,7 +204,9 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 	vector<F4Pair> tmp(pairs.begin(), pairs.end());
 	sort(tmp.begin(), tmp.end(), s());
 	currentDegree = tmp.begin()->sugar;
-	//std::cout << currentDegree << " degree\n";
+	if(verbosity & 16) {
+		*out << "Sugar degree:\t" <<currentDegree << "\n";
+	}
 	vector<pair<size_t, Term> > rows;
 	size_t index;
 	// Create pivots
@@ -227,7 +223,6 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 	tmp.clear();
 	// SELECTION END
 
-	//cout << index << " pairs\n";
 	size_t upper = 2*index;
 
 	unordered_map<Term, vector<pair<size_t, coeffType> > > pivotOps;
@@ -286,8 +281,6 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 
 	terms.insert(termsUnordered.begin(), termsUnordered.end());
 
-	//rs.assign(rightSide.size(), vector<coeffType>(terms.size(), 0) );
-
 	size_t pad = __COEFF_FIELD_INTVECSIZE;
 	rs.assign(rightSide.size(), vector<coeffType>( (( terms.size()+pad-1 )/ pad ) * pad, 0) );
 	for(size_t i = 0; i < rightSide.size(); i++) {
@@ -303,6 +296,10 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 	}
 	rightSide.clear();
 	
+	if(verbosity & 64) {
+		*out << "Matrix (r x c):\t" << rs.size() << " x " << terms.size() + pivots.size() << "\n";
+	}
+
 	map<Term, vector<pair<size_t, coeffType> >, Term::comparator> pivotOpsOrdered(pivotOps.begin(), pivotOps.end(), tog);
 	pivotOps.clear();
 	ops.push_back( vector<F4Operation >() );
@@ -343,8 +340,8 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<vector<F4
 	pivotOpsOrdered.clear();
 	ops.pop_back();
 	prepareTime += seconds() - timer;
-	//cout << "Operations:\t" << ops.size() << "\n";
-	//cout << "Preparation:\t" << seconds() - timer << "\n";
+	//*out << "Operations:\t" << ops.size() << "\n";
+	//*out << "Preparation:\t" << seconds() - timer << "\n";
 	return upper;
 }
 
@@ -354,7 +351,6 @@ void F4::reduce(F4PairSet& pairs, vector<Polynomial>& polys)
 	set<Term, Term::comparator> terms(tog);
 	vector<vector<F4Operation> > ops;
 	vector<vector<coeffType> > rs;
-	//vector<vector<size_t> > setOffset; 
 	size_t upper = prepare(pairs, polys, ops, terms, rs);
 
 	// ELIMINATE
@@ -366,10 +362,11 @@ void F4::reduce(F4PairSet& pairs, vector<Polynomial>& polys)
 	vector<bool> empty(upper, false); // too large, FIX?
 	
 	gauss(rs, upper, empty);
-	//cout << "GAUSSR:\t" << seconds()-timer << "\n";
 	// ELIMINATE END
 	reductionTime += seconds()-timer;
-	//cout << "REDUCE:\t" << seconds()-timer << "\n";
+	if(verbosity & 32) {
+		*out << "Red. step (s):\t" << seconds()-timer << "\n";
+	}
 	for(size_t i = 1; i < upper; i+=2)
 	{
 		if(!empty[i])
@@ -387,7 +384,7 @@ void F4::reduce(F4PairSet& pairs, vector<Polynomial>& polys)
 			polys.push_back( p );
 		}
 	}
-	//cout << polys.size() << " new elements\n";
+	//*out << polys.size() << " new elements\n";
 	//postReduce(polys);
 }
 
@@ -397,12 +394,14 @@ void F4::postReduce(vector<Polynomial>& polys)
 }
 
 
-vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrdering* o, CoeffField* field, int threads)
+vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrdering* o, CoeffField* field, int threads, int verbosity, std::ostream& output)
 {
 	double start = seconds();
 	this->field = field;
 	this->threads = threads;
 	this->O = o;
+	this->verbosity = verbosity;
+	this->out = &output;
 	F4PairComparator f4pc(o);
 	F4PairSet pairs(f4pc);
 	updateTime = 0;
@@ -410,6 +409,7 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 	reductionTime = 0;
 
 	sort(generators.begin(), generators.end(), PolynomialComparator(o, true));		
+	
 	//normalize
 	for_each(generators.begin(), generators.end(), bind(mem_fn(&Polynomial::normalize), _1, field));
 
@@ -421,26 +421,24 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 		if(!polys.empty()) {
 			updatePairs(pairs, polys);
 		}
-		//cout << pairs.size() << " pairs\n";
-		/*size_t t = 0;	
-		size_t k = 0;
-		for(size_t i = 0; i < groebnerBasis.size(); i++)
-		{
-			t += groebnerBasis[i].size();	
-			if(inGroebnerBasis[i]) {
-				k++;
-			}
-		}*/
 	}
-	//cout << "Reduction (s): \t" << reductionTime << "\n";
-	//cout << "P-Time: \t" << prepareTime << "\n";
-	//cout << "U-Time: \t" << updateTime << "\n";
+	if(verbosity & 2) {
+		*out << "Reduction (s): \t" << reductionTime << "\n";
+	}
+	if(verbosity & 4) {
+		*out << "Prepare (s): \t" << prepareTime << "\n";
+	}
+	if(verbosity & 8) {
+		*out << "Update (s): \t" << updateTime << "\n";
+	}
 	vector<Polynomial> result;
 	for(size_t i = 0; i < groebnerBasis.size(); i++)
 	{
 		if(inGroebnerBasis[i])
 			result.push_back(groebnerBasis[i]);
 	}
-	//cout << "Runtime (s):\t" << seconds() - start << "\n";
+	if(verbosity & 1) {
+		*out << "Runtime (s):\t" << seconds() - start << "\n";
+	}
 	return result;
 }

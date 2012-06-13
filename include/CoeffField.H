@@ -72,9 +72,8 @@ class CoeffField
 {
 	public:
 		// The modulus, i.e. n of F_n
-		const coeffType modn;
-		float inverse;
 		static const size_t pad = __COEFF_FIELD_INTVECSIZE;
+		const coeffType modn;
 
 	private:
 		// precalculated exponents and logarithms

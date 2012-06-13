@@ -67,8 +67,6 @@ void CoeffField::mulSub(std::vector<coeffType>& t, std::vector<coeffType>& o, co
 		// x[k] + = ( (y[k] > x[k]) & modn) - y[k];
 		x[k] = __COEFF_FIELD_VECADD(x[k], __COEFF_FIELD_VECSUB(__COEFF_FIELD_VECAND(__COEFF_FIELD_VECGT(y[k], x[k]), modnvec), y[k]));
 	}
-	for(size_t k = 0; k < t.size(); k++) {
-	}
 }
 #else
 void CoeffField::mulSub(std::vector<coeffType>& t, std::vector<coeffType>& o, coeffType c, size_t prefix, size_t suffix) const {

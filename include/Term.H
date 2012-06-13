@@ -26,10 +26,10 @@ class Polynomial;
 
 class TermInstance {
 	protected:
-		TMonoid* const owner;
-		degreeType degree;
-		size_t hash;
 		degreeType* indets;
+		TMonoid* const owner;
+		size_t hash;
+		degreeType degree;
 
 		degreeType* alloc() {
 			return (degreeType*)malloc(owner->N*sizeof(degreeType));

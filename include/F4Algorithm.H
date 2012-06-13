@@ -26,13 +26,12 @@
 #include <iostream>
 #include "../include/F4Utils.H"
 
-class F4Pair {
-	public:
+struct F4Pair {
 		Term LCM;
 		size_t i;
 		size_t j;
-		bool marked;
 		degreeType sugar;
+		bool marked;
 
 		F4Pair(const Term& LCM, size_t i, size_t j, bool marked, degreeType sugar) : LCM(LCM), i(i), j(j), marked(marked), sugar(sugar)	 {};
 
@@ -48,8 +47,7 @@ class F4Pair {
 	};
 };
 
-class F4Pivot {
-	public:
+struct F4Pivot {
 		const Term column;
 		size_t row;
 		std::vector<std::pair<size_t, coeffType> > operations;
@@ -81,12 +79,13 @@ typedef std::set<F4Pair,F4Pair::comparator> F4PairSet;
 
 class F4 {
 	public:
-		CoeffField* field;
 		std::vector<Polynomial> groebnerBasis;
 		std::vector<bool> inGroebnerBasis;
 		const TOrdering* O;
-		degreeType currentDegree;
+		CoeffField* field;
 		int threads;
+		degreeType currentDegree;
+
 		/* Verbosity, which can be changed during runtime, nothing which should
 		 * influence performance.
 		 *

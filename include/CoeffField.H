@@ -35,6 +35,7 @@
 
 // Define the SSE functions in dependency of F4_COEFF_BITS
 #if F4_COEFF_BITS <= 8
+	#define __COEFF_FIELD_INTVECSIZE 16
 	#define __COEFF_FIELD_VECGT(x,y) (_mm_cmpgt_epi8(x,y))
 	#define __COEFF_FIELD_VECSET1(x) (_mm_set1_epi8(x))
 	#define __COEFF_FIELD_VECADD(x,y) (_mm_add_epi8(x,y))
@@ -42,12 +43,14 @@
 	#define __COEFF_FIELD_NUMBERTYPE int8_t
 #else
 	#if F4_COEFF_BITS <= 16
+		#define __COEFF_FIELD_INTVECSIZE 8
 		#define __COEFF_FIELD_VECGT(x,y) (_mm_cmpgt_epi16(x,y))
 		#define __COEFF_FIELD_VECSET1(x) (_mm_set1_epi16(x))
 		#define __COEFF_FIELD_VECADD(x,y) (_mm_add_epi16(x,y))
 		#define __COEFF_FIELD_VECSUB(x,y) (_mm_sub_epi16(x,y))
 		#define __COEFF_FIELD_NUMBERTYPE int16_t
 	#else
+		#define __COEFF_FIELD_INTVECSIZE 4
 		#define __COEFF_FIELD_VECGT(x,y) (_mm_cmpgt_epi32(x,y))
 		#define __COEFF_FIELD_VECSET1(x) (_mm_set1_epi32(x))
 		#define __COEFF_FIELD_VECADD(x,y) (_mm_add_epi32(x,y))
@@ -56,7 +59,6 @@
 	#endif
 #endif
 
-#define __COEFF_FIELD_INTVECSIZE 128/F4_COEFF_BITS
 #define __COEFF_FIELD_VECAND(x,y) (_mm_and_si128(x,y))
 
 // define the type for coefficients
@@ -72,7 +74,7 @@ class CoeffField
 {
 	public:
 		// The modulus, i.e. n of F_n
-		static const size_t pad = __COEFF_FIELD_INTVECSIZE;
+		static const size_t pad = __COEFF_FIELD_INTVECSIZE * 4;
 		const coeffType modn;
 
 	private:

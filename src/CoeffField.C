@@ -48,24 +48,27 @@ CoeffField::CoeffField(coeffType modn) : modn(modn)
 	}
 }
 
+#define omulc(d) (o[k+d] != 0 ? exps[logs[o[k+d]] + lc] : 0)
+
 #ifdef __SSE2__
 void CoeffField::mulSub(std::vector<coeffType>& t, std::vector<coeffType>& o, coeffType c, size_t prefix, size_t suffix) const {
-	std::vector<coeffType> tmp(o);
-	if(c != 1) {
-		coeffType lc = logs[c];
-		for(size_t k = prefix; k < suffix; k++) {
-			if(tmp[k] != 0) {
-				tmp[k] = exps[logs[tmp[k]] + lc];
-			}
-		}
-	}
-
-	__m128i* y = (__m128i*) &(tmp[0]);
 	__m128i* x = (__m128i*) &(t[0]);
-	size_t n = suffix / (__COEFF_FIELD_INTVECSIZE);
-	for(size_t k = prefix / __COEFF_FIELD_INTVECSIZE; k < n; k++) {
-		// x[k] + = ( (y[k] > x[k]) & modn) - y[k];
-		x[k] = __COEFF_FIELD_VECADD(x[k], __COEFF_FIELD_VECSUB(__COEFF_FIELD_VECAND(__COEFF_FIELD_VECGT(y[k], x[k]), modnvec), y[k]));
+	coeffType lc = logs[c];
+	size_t i = prefix / __COEFF_FIELD_INTVECSIZE;
+	for(size_t k = prefix; k < suffix; k+=__COEFF_FIELD_INTVECSIZE) {
+		// Not a beauty ...
+		#if F4_COEFF_BITS <= 8
+			__m128i y = _mm_set_epi8(omulc(15),omulc(14),omulc(13),omulc(12),omulc(11),omulc(10),omulc(9),omulc(8),
+						 omulc(7),omulc(6),omulc(5),omulc(4),omulc(3),omulc(2),omulc(1),omulc(0));
+		#else
+			#if F4_COEFF_BITS <= 16
+				__m128i y = _mm_set_epi16(omulc(7),omulc(6),omulc(5),omulc(4),omulc(3),omulc(2),omulc(1),omulc(0));
+			#else
+				__m128i y = _mm_set_epi32(omulc(3),omulc(2),omulc(1),omulc(0));
+			#endif
+		#endif
+		x[i] = __COEFF_FIELD_VECADD(x[i], __COEFF_FIELD_VECSUB(__COEFF_FIELD_VECAND(__COEFF_FIELD_VECGT(y, x[i]), modnvec), y));
+		i++;
 	}
 }
 #else

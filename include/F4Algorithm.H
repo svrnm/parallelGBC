@@ -30,8 +30,8 @@ struct F4Pair {
 		Term LCM;
 		size_t i;
 		size_t j;
-		degreeType sugar;
 		bool marked;
+		degreeType sugar;
 
 		F4Pair(const Term& LCM, size_t i, size_t j, bool marked, degreeType sugar) : LCM(LCM), i(i), j(j), marked(marked), sugar(sugar)	 {};
 

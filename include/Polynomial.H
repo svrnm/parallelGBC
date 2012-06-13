@@ -37,67 +37,10 @@ class Polynomial {
 		Polynomial() {
 			sugarDegree = 0;
 		}
-		Polynomial(std::vector<coeffType>& cs, std::vector<Term>& ts)
-		{
-			if(ts.size() > 0) {
-				sugarDegree = ts[0].deg();
-			} else {
-				sugarDegree = 0;
-			}
-			if(ts.size() < cs.size()) {
-				cs.erase(cs.begin() + ts.size(), cs.end());
-			}
-			if(ts.size() > cs.size()) {
-				ts.erase(ts.begin() + cs.size(), ts.end());
-			}
-		}
-		Polynomial(std::vector<Monomial>& ms)
-		{ 
-			if(ms.size() > 0)
-			{ 
-				sugarDegree = ms[0].second.deg();
-				for(size_t i = 0; i < ms.size(); i++) {
-					coeffs.push_back(ms[i].first);
-					terms.push_back(ms[i].second);
-				}
-			}
-			else
-			{ 
-				sugarDegree = 0;
-			}
-		}
-		Polynomial(const Term& t) {
-			terms.push_back(t);
-			coeffs.push_back(1);
-			sugarDegree = t.deg();
-		}
-
-		Polynomial(std::vector<Monomial>& ms, bool purify)
-		{ 
-			if(ms.size() > 0)
-			{ 
-				sugarDegree = ms[0].second.deg();
-                                for(size_t i = 0; i < ms.size(); i++) {
-                                        coeffs.push_back(ms[i].first);
-                                        terms.push_back(ms[i].second);
-                                }
-			}
-			if(purify)
-			{ 
-				for(size_t i = 0; i < coeffs.size(); i++)
-				{ 
-					for(size_t j = i+1; j < coeffs.size();) {
-						if( terms[i] == terms[j] ) {
-							coeffs[i] += coeffs[j];
-							coeffs.erase(coeffs.begin() + j);
-							terms.erase(terms.begin() + j);
-						} else {
-							j++; 
-						}
-					}
-				}
-			}
-		}
+		Polynomial(std::vector<coeffType>& cs, std::vector<Term>& ts);
+		Polynomial(std::vector<Monomial>& ms);
+		Polynomial(const Term& t);
+		Polynomial(std::vector<Monomial>& ms, bool purify);
 
 		static Polynomial createInstance(const std::string& s, TMonoid& m, degreeType min = 1);
 		static std::vector<Polynomial> createList(const std::string& s, TMonoid& m, degreeType min = 1);
@@ -129,8 +72,6 @@ class Polynomial {
 		bool isZero() const {
 			return coeffs.size() < 1 || coeffs[0] == 0; // Attention 0*LT+k*T with k != 0 will break this!
 		}
-
-		void sub(const Polynomial& other, const TOrdering* O, const CoeffField* f);
 
 		void normalize(const CoeffField* field);
 
@@ -169,6 +110,17 @@ class Polynomial {
 			coeffs.push_back(c);
 			terms.push_back(t);
 		}
+
+		struct comparator {
+			const TOrdering* O;
+			bool gt; // if greater
+
+			comparator(const TOrdering* O, bool gt = false): O(O), gt(gt) {}
+
+			bool operator() (const Polynomial& lhs, const Polynomial& rhs) const 		{
+				return gt ? O->cmp(rhs.LT(), lhs.LT()) < 0 : O->cmp(lhs.LT(), rhs.LT()) < 0;
+			}
+		};
 };
 
 std::ostream& operator<< (std::ostream &out, const Polynomial &poly);
@@ -183,19 +135,5 @@ class MonomialComparator {
 
 		bool operator() (const Monomial& lhs, const Monomial& rhs) const;
 };
-
-class PolynomialComparator {
-	public:
-		const TOrdering* O;
-		bool gt; // if greater
-
-		PolynomialComparator(const TOrdering* O, bool gt = false): O(O), gt(gt) {}
-
-		bool operator() (const Polynomial& lhs, const Polynomial& rhs) const 		{
-			return gt ? O->cmp(rhs.LT(), lhs.LT()) < 0 : O->cmp(lhs.LT(), rhs.LT()) < 0;
-		}
-};
-
-
 
 #endif

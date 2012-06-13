@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
 	
 	// If the second parameter provides the number of
 	// threads, use it, if not use the default value.
-	int threads = __F4_ALGORITHM_THREADS;
+	int threads = 1;
 	if(argc > 2) {
 		istringstream( argv[2] ) >> threads;
 	}
@@ -75,11 +75,14 @@ int main(int argc, char* argv[]) {
 	}
 	// Count the indeterminants automaticly
 	boost::regex expression("x\\[(\\d*)\\]");
-	std::vector<std::string> numbers;
-	std::copy(boost::sregex_token_iterator(s.begin(), s.end(), expression, 1), boost::sregex_token_iterator(),   std::back_inserter(numbers));
 	degreeType max = 1, val;
-	for(size_t i = 0; i < numbers.size(); i++) {
-		istringstream ( numbers[i] ) >> val;
+	
+	boost::sregex_token_iterator iter(t.begin(), t.end(), expression, 1);
+	boost::sregex_token_iterator end;
+
+	for(; iter != end; ++iter) {
+	//for(size_t i = 0; i < numbers.size(); i++) {
+		istringstream ( iter->str() ) >> val;
 		if( val > max ) max = val;
 	}
 	filestr.close();
@@ -104,6 +107,7 @@ int main(int argc, char* argv[]) {
 	// Create the f4 computer.
 	F4 f4;
 	// Compute the groebner basis for the polynomials in 'list' with 'threads' threads/processors 
+	
 	vector<Polynomial> result = f4(list, o, cf, threads, verbosity);
 	// Return the size of the groebner basis
 	if(printGB > 0)

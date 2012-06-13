@@ -13,15 +13,13 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 #include "../include/CoeffField.H"
 #include <iostream>
 
-CoeffField::CoeffField(coeffType modn) : modn(modn), modnM1(modn-1)
+CoeffField::CoeffField(coeffType modn) : modn(modn)
 {
-	for(size_t k = 0; k < __COEFF_FIELD_INTVECSIZE; k++) {
-		modnvec.f[k] = modn;	
-	}
+	modnvec = __COEFF_FIELD_VECSET1( modn );
 
 	coeffType i;
 	coeffType w = 1;
@@ -41,11 +39,45 @@ CoeffField::CoeffField(coeffType modn) : modn(modn), modnM1(modn-1)
 			exps[i] = (w * exps[i-1]) % modn;
 			logs[exps[i]] = i;
 		} while( exps[i] != 1);
-	} while( i != modnM1);
-
+	} while( i != modn - 1);
 	exps.insert(exps.end(), exps.begin()+1, exps.end());
-	
+
+
 	for(coeffType i = 0; i < modn; i++) {
 		invs[i] = exps[modn - 1 - logs[ i ] ];
 	}
 }
+
+#ifdef __SSE2__
+void CoeffField::mulSub(std::vector<coeffType>& t, std::vector<coeffType>& o, coeffType c, size_t prefix, size_t suffix) const {
+	std::vector<coeffType> tmp(o);
+	if(c != 1) {
+		coeffType lc = logs[c];
+		for(size_t k = prefix; k < suffix; k++) {
+			if(tmp[k] != 0) {
+				tmp[k] = exps[logs[tmp[k]] + lc];
+			}
+		}
+	}
+
+	__m128i* y = (__m128i*) &(tmp[0]);
+	__m128i* x = (__m128i*) &(t[0]);
+	size_t n = suffix / (__COEFF_FIELD_INTVECSIZE);
+	for(size_t k = prefix / __COEFF_FIELD_INTVECSIZE; k < n; k++) {
+		// x[k] + = ( (y[k] > x[k]) & modn) - y[k];
+		x[k] = __COEFF_FIELD_VECADD(x[k], __COEFF_FIELD_VECSUB(__COEFF_FIELD_VECAND(__COEFF_FIELD_VECGT(y[k], x[k]), modnvec), y[k]));
+	}
+	for(size_t k = 0; k < t.size(); k++) {
+	}
+}
+#else
+void CoeffField::mulSub(std::vector<coeffType>& t, std::vector<coeffType>& o, coeffType c, size_t prefix, size_t suffix) const {
+	c = logs[c];
+	for(size_t k = prefix; k < suffix; k++) {
+		if(o[k] != 0) {
+			coeffType b = exps[logs[o[k]] + c];
+			t[k] = (b > t[k]) ? t[k] - b + modn : t[k] - b;
+		}
+	}
+}
+#endif

@@ -41,11 +41,14 @@ TMonoid::TMonoid(size_t N) : /*tls(N),*/ N(N), D(64/N) {
 
 bool TMonoid::TermInstanceEquals::operator()(const TermInstance* const t1, const TermInstance* const t2) const 
 {
-	return t1->equal(t2);
+	return (t1 == t2) || (t1 && t2 && t1->equal(t2));
 }
 
 size_t TMonoid::TermInstanceHash::operator()(const TermInstance* const t) const {
-	return t->hash;
+	if(t)
+		return t->hash;
+	else
+		return 0;
 } 
 
 TMonoid::~TMonoid() {

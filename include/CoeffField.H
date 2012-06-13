@@ -21,52 +21,46 @@
 */
 #ifndef T_COEFF_FIELD_H
 #define T_COEFF_FIELD_H
-#include <assert.h>
 #include <stdint.h>
 #include <vector>
 #include <iostream>
-
-// By default we use sse.
-#ifndef F4_USE_SSE
-	#define F4_USE_SSE 1
-#endif
+#include <xmmintrin.h>
+#include <mmintrin.h>
+#define BREAKPOINT {while(getchar() != '\n');}
 
 // By default we use 16 bits for the coefficients
 #ifndef F4_COEFF_BITS 
 	#define F4_COEFF_BITS 16
 #endif
 
-// Define some variables and functions in dependency of F4_COEFF_BITS
+// Define the SSE functions in dependency of F4_COEFF_BITS
 #if F4_COEFF_BITS <= 8
-	#define __COEFF_FIELD_INTVECSIZE 16
-	#define __COEFF_FIELD_GTVEC(x,y) (__builtin_ia32_pcmpgtb128 (x,y))
-	#define __COEFF_FIELD_NUMBERTYPE char
+	#define __COEFF_FIELD_VECGT(x,y) (_mm_cmpgt_epi8(x,y))
+	#define __COEFF_FIELD_VECSET1(x) (_mm_set1_epi8(x))
+	#define __COEFF_FIELD_VECADD(x,y) (_mm_add_epi8(x,y))
+	#define __COEFF_FIELD_VECSUB(x,y) (_mm_sub_epi8(x,y))
+	#define __COEFF_FIELD_NUMBERTYPE int8_t
 #else
 	#if F4_COEFF_BITS <= 16
-		// 8*16 = 128 bits for the SSE vector.
-		#define __COEFF_FIELD_INTVECSIZE 8
-		// The build in GCC function to compare 8 16-bit integers at once
-		#define __COEFF_FIELD_GTVEC(x,y) (__builtin_ia32_pcmpgtw128 (x,y))
-		// The used type
+		#define __COEFF_FIELD_VECGT(x,y) (_mm_cmpgt_epi16(x,y))
+		#define __COEFF_FIELD_VECSET1(x) (_mm_set1_epi16(x))
+		#define __COEFF_FIELD_VECADD(x,y) (_mm_add_epi16(x,y))
+		#define __COEFF_FIELD_VECSUB(x,y) (_mm_sub_epi16(x,y))
 		#define __COEFF_FIELD_NUMBERTYPE int16_t
 	#else
-		// 4*32 = 128 bits for the SSE vector
-		#define __COEFF_FIELD_INTVECSIZE 4
-		// The build in GCC function to compare 4 32-bit integers at once
-		#define __COEFF_FIELD_GTVEC(x,y) (__builtin_ia32_pcmpgtd128 (x,y))
-		// The used type
+		#define __COEFF_FIELD_VECGT(x,y) (_mm_cmpgt_epi32(x,y))
+		#define __COEFF_FIELD_VECSET1(x) (_mm_set1_epi32(x))
+		#define __COEFF_FIELD_VECADD(x,y) (_mm_add_epi32(x,y))
+		#define __COEFF_FIELD_VECSUB(x,y) (_mm_sub_epi32(x,y))
 		#define __COEFF_FIELD_NUMBERTYPE int32_t
 	#endif
 #endif
 
+#define __COEFF_FIELD_INTVECSIZE 128/F4_COEFF_BITS
+#define __COEFF_FIELD_VECAND(x,y) (_mm_and_si128(x,y))
+
 // define the type for coefficients
 typedef __COEFF_FIELD_NUMBERTYPE coeffType;
-
-// Define SSE Vector
-typedef coeffType intvec __attribute__ ((vector_size (16)));
-
-// Helper to initialize the vector
-union intvecarray { intvec v; coeffType f[__COEFF_FIELD_INTVECSIZE]; };
 
 /*
  * This class represents the coefficient field. A coefficient is a
@@ -75,10 +69,12 @@ union intvecarray { intvec v; coeffType f[__COEFF_FIELD_INTVECSIZE]; };
  * and memory usage, not for software design ...
  */
 class CoeffField
-{ 
+{
 	public:
 		// The modulus, i.e. n of F_n
 		const coeffType modn;
+		float inverse;
+		static const size_t pad = __COEFF_FIELD_INTVECSIZE;
 
 	private:
 		// precalculated exponents and logarithms
@@ -86,11 +82,8 @@ class CoeffField
 		std::vector<coeffType> logs;
 		std::vector<coeffType> invs;
 
-		// modules minus 1
-		const coeffType modnM1;
-
 		// array with k times the modules for SSE computations
-		intvecarray modnvec;
+		__m128i modnvec;
 
 		// this property is used by mulSub as multiplication factor
 		coeffType factor;
@@ -105,6 +98,11 @@ class CoeffField
 		{ 
 			if( a == 0 || b == 0 ) return 0;
 			return exps[logs[a] + logs[b]];
+		}
+
+		coeffType bringIn(coeffType a) const
+		{
+			return ((a % modn) + modn) % modn;
 		}
 
 		coeffType inv(coeffType a) const
@@ -137,38 +135,6 @@ class CoeffField
 			return b > a ? a + modn - b : a - b;
 		}
 
-		#if F4_USE_SSE
-		void mulSub(std::vector<coeffType>& t, std::vector<coeffType>& o, coeffType c) const {
-			std::vector<coeffType> tmp(o);
-			if(c != 1) {
-				coeffType lc = logs[c];
-				for(size_t k = 0; k < o.size(); k++) {
-					if(o[k] != 0) { 
-						tmp[k] = exps[logs[o[k]] + lc]; 
-					}
-				}
-			}
-
-
-			intvec* y = (intvec*) &(tmp[0]);
-			intvec* x = (intvec*) &(t[0]);
-			size_t n = t.size() / (__COEFF_FIELD_INTVECSIZE);	
-			for(size_t k = 0; k < n; k++) {
-				x[k] += (__COEFF_FIELD_GTVEC(y[k], x[k]) & modnvec.v) - y[k+0];
-			}
-			
-			tmp.clear();
-		}
-		#else
-		void mulSub(std::vector<coeffType>& t, std::vector<coeffType>& o, coeffType c) const {
-			c = logs[c];
-			for(size_t k = 0; k < o.size(); k++) {
-				if(o[k] != 0) {
-					coeffType b = exps[logs[o[k]] + c];
-					t[k] = (b > t[k]) ? t[k] - b + modn : t[k] - b;	
-				}
-			}
-		}
-		#endif
+		void mulSub(std::vector<coeffType>& t, std::vector<coeffType>& o, coeffType c, size_t prefix, size_t suffix) const;
 };
 #endif

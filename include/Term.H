@@ -20,7 +20,6 @@
 #include <string.h>
 #include "TMonoid.H"
 #include "TOrdering.H"
-#include <unordered_set>
 #include <iostream>
 
 class Polynomial;

@@ -13,7 +13,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 #include "../include/Polynomial.H"
 #include <sstream>
 #include <boost/algorithm/string.hpp>
@@ -40,7 +40,7 @@ ostream& operator<< (ostream &out, const Polynomial &poly)
 		first = false;
 		if(t.first != 1)
 		{
-			out << t.first << "*";
+			out << (int)t.first << "*";
 		}
 		out << t.second;
 	}
@@ -64,13 +64,75 @@ ostream& operator<< (ostream& out, const vector<Polynomial> &polys)
 	return out;
 }
 
+Polynomial::Polynomial(std::vector<coeffType>& cs, std::vector<Term>& ts)
+{
+	if(ts.size() > 0) {
+		sugarDegree = ts[0].deg();
+	} else {
+		sugarDegree = 0;
+	}
+	if(ts.size() < cs.size()) {
+		cs.erase(cs.begin() + ts.size(), cs.end());
+	}
+	if(ts.size() > cs.size()) {
+		ts.erase(ts.begin() + cs.size(), ts.end());
+	}
+}
+
+Polynomial::Polynomial(std::vector<Monomial>& ms)
+{
+	if(ms.size() > 0)
+	{
+		sugarDegree = ms[0].second.deg();
+		for(size_t i = 0; i < ms.size(); i++) {
+			coeffs.push_back(ms[i].first);
+			terms.push_back(ms[i].second);
+		}
+	}
+	else
+	{
+		sugarDegree = 0;
+	}
+}
+
+Polynomial::Polynomial(const Term& t) {
+	terms.push_back(t);
+	coeffs.push_back(1);
+	sugarDegree = t.deg();
+}
+
+Polynomial::Polynomial(std::vector<Monomial>& ms, bool purify)
+{
+	if(ms.size() > 0)
+	{
+		sugarDegree = ms[0].second.deg();
+		for(size_t i = 0; i < ms.size(); i++) {
+			coeffs.push_back(ms[i].first);
+			terms.push_back(ms[i].second);
+		}
+	}
+	if(purify)
+	{
+		for(size_t i = 0; i < coeffs.size(); i++)
+		{
+			for(size_t j = i+1; j < coeffs.size();) {
+				if( terms[i] == terms[j] ) {
+					coeffs[i] += coeffs[j];
+					coeffs.erase(coeffs.begin() + j);
+					terms.erase(terms.begin() + j);
+				} else {
+					j++;
+				}
+			}
+		}
+	}
+}
+
+
 Polynomial Polynomial::mul(const Term& t) const {
-	//vector<Monomial> ms(monomials.begin(), monomials.end());
 	vector<Term> ts(terms.begin(), terms.end());
 	vector<coeffType> cs(coeffs.begin(), coeffs.end());
 	for(size_t i = 0; i < size(); i++) {
-		//ts.push_back(t->mul(terms[i]));
-		//ms[i].second = t.mul(ms[i].second);
 		ts[i] = t.mul(ts[i]);
 	}
 	return Polynomial(cs,ts);
@@ -100,7 +162,8 @@ void Polynomial::mulBy(coeffType l, const CoeffField* field) {
 
 void Polynomial::bringIn(const CoeffField* field, bool normalize) {
 	for(size_t i = 0; i < coeffs.size();) {
-		coeffs[i] = ((coeffs[i] % field->modn) + field->modn) % field->modn;
+		//coeffs[i] = ((coeffs[i] % field->modn) + field->modn) % field->modn;
+		coeffs[i] = field->bringIn(coeffs[i]);
 		if(coeffs[i] == 0) {
 			coeffs.erase(coeffs.begin() + i);
 			terms.erase(terms.begin() + i);
@@ -155,39 +218,39 @@ void Polynomial::order(const TOrdering* O) {
 	}
 }
 
-void Polynomial::sub(const Polynomial& other, const TOrdering* O, const CoeffField* f) {
-	/*vector<Monomial>::iterator m1 = monomials.begin();
-	vector<Monomial>::const_iterator m2 = other.monomials.begin();
-	vector<Monomial> result;
-	back_insert_iterator<vector<Monomial> > r(result);
+/*void Polynomial::sub(const Polynomial& other, const TOrdering* O, const CoeffField* f) {
+  vector<Monomial>::iterator m1 = monomials.begin();
+  vector<Monomial>::const_iterator m2 = other.monomials.begin();
+  vector<Monomial> result;
+  back_insert_iterator<vector<Monomial> > r(result);
 
-	while(m1 != monomials.end() && m2 != other.monomials.end()) {
-		int c = O->cmp(m1->second, m2->second);
-		if(c == 0) {
-			coeffType coeff = f->sub(m1->first, m2->first);
-			if(coeff != 0) {
-				r = make_pair(coeff, m1->second);
-			}
-			m1++;
-			m2++;
-		} else if (c > 0) {
-			r = *m1;
-			m1++;
-		} else {
-			r = make_pair(f->minus(m2->first), m2->second);
-			m2++;
-		}
-	}
-	// Either m1 is end or m2, never both!
-	if(m1 == monomials.end()) {
-		for(; m2 != other.monomials.end(); m2++) {
-			r = make_pair(f->minus(m2->first), m2->second);
-		}
-	} else if(m2 == other.monomials.end()) {
-		copy(m1,monomials.end(),r);
-	}
-	swap(monomials, result);*/
+  while(m1 != monomials.end() && m2 != other.monomials.end()) {
+  int c = O->cmp(m1->second, m2->second);
+  if(c == 0) {
+  coeffType coeff = f->sub(m1->first, m2->first);
+  if(coeff != 0) {
+  r = make_pair(coeff, m1->second);
+  }
+  m1++;
+  m2++;
+  } else if (c > 0) {
+  r = *m1;
+  m1++;
+  } else {
+  r = make_pair(f->minus(m2->first), m2->second);
+  m2++;
+  }
+  }
+// Either m1 is end or m2, never both!
+if(m1 == monomials.end()) {
+for(; m2 != other.monomials.end(); m2++) {
+r = make_pair(f->minus(m2->first), m2->second);
 }
+} else if(m2 == other.monomials.end()) {
+copy(m1,monomials.end(),r);
+}
+swap(monomials, result);
+}*/
 
 vector<Polynomial> Polynomial::createList(const string& s, TMonoid& m, degreeType min) {
 	vector<string> strs;

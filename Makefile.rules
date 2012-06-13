@@ -27,9 +27,9 @@ CXX = /usr/bin/g++
 # F4_USE_SSE1 enables sse optimizations in the field arithmetics (currently requires GCC)
 # 
 # the following CXXFLAGS are for the GNU COMPILER:
-CXXFLAGS = -fPIC -Wall -fopenmp -O2 -march=native -pipe -D'F4_THREADS=1' -D'F4_COEFF_BITS=16' -D'F4_USE_SSE=1' -std=c++0x
+CXXFLAGS = -fPIC -Wall -fopenmp -O2 -march=native -pipe -D'F4_COEFF_BITS=16' -std=c++0x
 # DEBUG FLAGS:
-# CXXFLAGS = -fPIC -Wall -pg -g3 -gdwarf-2 -D'F4_THREADS=1' -D'F4_COEFF_BITS=16' -D'F4_USE_SSE=1' -std=c++0x
+#CXXFLAGS = -fPIC -Wall -pg -g3 -gdwarf-2 -D'F4_USE_SSE=1' -std=c++0x
 
 # Where the compiled (static) library will be stored.
 LIBRARY = ../lib/libf4.a

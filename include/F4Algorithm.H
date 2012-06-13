@@ -21,17 +21,10 @@
 #include <map>
 #include "../include/Term.H"
 #include "../include/Polynomial.H"
-#include <unordered_map>
 #include <algorithm>
 #include <boost/bind.hpp>
 #include <iostream>
 #include "../include/F4Utils.H"
-
-#ifdef F4_THREADS
-	#define __F4_ALGORITHM_THREADS F4_THREADS
-#else
-	#define __F4_ALGORITHM_THREADS 1
-#endif
 
 class F4Pair {
 	public:
@@ -42,18 +35,17 @@ class F4Pair {
 		degreeType sugar;
 
 		F4Pair(const Term& LCM, size_t i, size_t j, bool marked, degreeType sugar) : LCM(LCM), i(i), j(j), marked(marked), sugar(sugar)	 {};
-};
 
-class F4PairComparator {
-	public:
+	struct comparator {
 		const TOrdering* O;
 
-		F4PairComparator(const TOrdering* O) : O(O) {}
+		comparator(const TOrdering* O) : O(O) {}
 
 		bool operator() (const F4Pair& lhs, const F4Pair& rhs) const 
 		{
 			return O->cmp(lhs.LCM, rhs.LCM) < 0;
 		}
+	};
 };
 
 class F4Pivot {
@@ -85,7 +77,7 @@ struct F4Operations {
 		}
 };
 
-typedef std::set<F4Pair,F4PairComparator> F4PairSet;
+typedef std::set<F4Pair,F4Pair::comparator> F4PairSet;
 
 class F4 {
 	public:
@@ -118,12 +110,11 @@ class F4 {
 		// select() is part of reduce
 		
 		void gauss(std::vector<std::vector<coeffType> >& matrix, size_t upper, std::vector<bool>& empty);
-		void pReduce(std::vector<F4Operations>& ops, std::vector<std::vector<coeffType> >& rs);
-		size_t prepare(F4PairSet& pairs, std::vector<Polynomial>& polys, std::vector<F4Operations>& ops, std::set<Term, Term::comparator>& terms, std::vector<std::vector<coeffType> >& rs);
+		void pReduce(std::vector<F4Operations>& ops, std::vector<size_t>& deps, std::vector<std::vector<coeffType> >& rs);
+		size_t prepare(F4PairSet& pairs, std::vector<Polynomial>& polys, std::vector<F4Operations>& ops, std::vector<size_t>& deps, std::set<Term, Term::comparator>& terms, std::vector<std::vector<coeffType> >& rs);
 		void reduce(F4PairSet& pairs, std::vector<Polynomial>& polys);
-		void postReduce(std::vector<Polynomial>& polys);
 		void updatePairs(F4PairSet& pairs, std::vector<Polynomial>& polys, bool initial = false);
-		std::vector<Polynomial> operator()(std::vector<Polynomial>& generators, const TOrdering* O, CoeffField* field, int threads = __F4_ALGORITHM_THREADS, int verbosity = 0, std::ostream& output = std::cout);
+		std::vector<Polynomial> operator()(std::vector<Polynomial>& generators, const TOrdering* O, CoeffField* field, int threads = 1, int verbosity = 0, std::ostream& output = std::cout);
 };
 
 #endif

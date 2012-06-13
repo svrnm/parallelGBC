@@ -19,16 +19,10 @@
 #include <sys/time.h>
 #include <iostream>
 #include <vector>
-
-
 inline double seconds()
 {    
   struct timeval tv;
   gettimeofday(&tv, NULL);
 	return (double)tv.tv_sec + ((double)tv.tv_usec)/1000000.0;
 }
-
-template<typename T> std::ostream& operator<< (std::ostream& out, const std::vector<T>& v);
-
-template<typename T> std::ostream& operator<< (std::ostream& out, const std::vector<std::vector<T> >& v);
 #endif

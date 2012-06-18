@@ -24,15 +24,15 @@
 
 
 
-#ifndef F4_DEGREE_BITS
-	#ifdef F4_COEFF_BITS
-		#define F4_DEGREE_BITS F4_COEFF_BITS
+#ifndef PGBC_DEGREE_BITS
+	#ifdef PGBC_COEFF_BITS
+		#define PGBC_DEGREE_BITS PGBC_COEFF_BITS
 	#else
-		#define F4_DEGREE_BITS 32
+		#define PGBC_DEGREE_BITS 32
 	#endif
 #endif
 
-#if F4_DEGREE_BITS <= 16
+#if PGBC_DEGREE_BITS <= 16
 	typedef int16_t degreeType;
 #else
 	typedef int32_t degreeType;

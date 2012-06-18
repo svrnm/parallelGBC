@@ -1,7 +1,7 @@
 /*
  *  Header file for the coefficient field. As coefficient field you can use any
- *  prime field within 2<=p<=2^k, where p is prime and k = F4_COEFF_BITS. The
- *  default size of F4_COEFF_BITS is 16, so you can use e.g. the field with 32003
+ *  prime field within 2<=p<=2^k, where p is prime and k = PGBC_COEFF_BITS. The
+ *  default size of PGBC_COEFF_BITS is 16, so you can use e.g. the field with 32003
  *  elements.
  *
  *  This file is part of parallelGBC, a parallel groebner basis computation tool.
@@ -29,12 +29,12 @@
 #define BREAKPOINT {while(getchar() != '\n');}
 
 // By default we use 16 bits for the coefficients
-#ifndef F4_COEFF_BITS 
-	#define F4_COEFF_BITS 16
+#ifndef PGBC_COEFF_BITS 
+	#define PGBC_COEFF_BITS 16
 #endif
 
-// Define the SSE functions in dependency of F4_COEFF_BITS
-#if F4_COEFF_BITS <= 8
+// Define the SSE functions in dependency of PGBC_COEFF_BITS
+#if PGBC_COEFF_BITS <= 8
 	#define __COEFF_FIELD_INTVECSIZE 16
 	#define __COEFF_FIELD_VECGT(x,y) (_mm_cmpgt_epi8(x,y))
 	#define __COEFF_FIELD_VECSET1(x) (_mm_set1_epi8(x))
@@ -42,7 +42,7 @@
 	#define __COEFF_FIELD_VECSUB(x,y) (_mm_sub_epi8(x,y))
 	#define __COEFF_FIELD_NUMBERTYPE int8_t
 #else
-	#if F4_COEFF_BITS <= 16
+	#if PGBC_COEFF_BITS <= 16
 		#define __COEFF_FIELD_INTVECSIZE 8
 		#define __COEFF_FIELD_VECGT(x,y) (_mm_cmpgt_epi16(x,y))
 		#define __COEFF_FIELD_VECSET1(x) (_mm_set1_epi16(x))

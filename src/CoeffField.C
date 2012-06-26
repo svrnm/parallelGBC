@@ -48,9 +48,9 @@ CoeffField::CoeffField(coeffType modn) : modn(modn)
 	}
 }
 
-#define omulc(d) (o[k+d] != 0 ? exps[logs[o[k+d]] + lc] : 0)
+#define omulc(d) (o[k+d] != 0 ? exps[o[k+d] + lc] : 0)
 
-#if defined __SSE2__ && defined PGBC_USE_SSE
+#if PGBC_USE_SSE == 1
 void CoeffField::mulSub(std::vector<coeffType>& t, std::vector<coeffType>& o, coeffType c, size_t prefix, size_t suffix) const {
 	__m128i* x = (__m128i*) &(t[0]);
 	coeffType lc = logs[c];
@@ -78,7 +78,7 @@ void CoeffField::mulSub(std::vector<coeffType>& t, std::vector<coeffType>& o, co
 	c = logs[c];
 	for(size_t k = prefix; k < suffix; k++) {
 		if(o[k] != 0) {
-			coeffType b = exps[logs[o[k]] + c];
+			coeffType b = exps[o[k] + c];
 			t[k] = (b > t[k]) ? t[k] - b + modn : t[k] - b;
 		}
 	}

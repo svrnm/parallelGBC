@@ -109,7 +109,7 @@ class F4 {
 		// select() is part of reduce
 		
 		void gauss(std::vector<std::vector<coeffType> >& matrix, size_t upper, std::vector<bool>& empty);
-		void pReduce(std::vector<F4Operations>& ops, std::vector<size_t>& deps, std::vector<std::vector<coeffType> >& rs);
+		void pReduce(std::vector<F4Operations>& ops, std::vector<size_t>& deps, size_t upper, std::vector<std::vector<coeffType> >& rs);
 		size_t prepare(F4PairSet& pairs, std::vector<Polynomial>& polys, std::vector<F4Operations>& ops, std::vector<size_t>& deps, std::set<Term, Term::comparator>& terms, std::vector<std::vector<coeffType> >& rs);
 		void reduce(F4PairSet& pairs, std::vector<Polynomial>& polys);
 		void updatePairs(F4PairSet& pairs, std::vector<Polynomial>& polys, bool initial = false);

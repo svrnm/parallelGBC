@@ -193,7 +193,7 @@ void F4::gauss(vector<vector<coeffType> >& matrix, size_t upper, vector<bool>& e
 
 }
 
-void F4::pReduce(vector<F4Operations>& ops, vector<size_t>& deps, vector<vector<coeffType> >& rs)
+void F4::pReduce(vector<F4Operations>& ops, vector<size_t>& deps, size_t upper,vector<vector<coeffType> >& rs)
 {
 	vector<size_t> prefixes(rs.size(), 0);
 	vector<size_t> suffixes(rs.size(), 0);
@@ -201,12 +201,15 @@ void F4::pReduce(vector<F4Operations>& ops, vector<size_t>& deps, vector<vector<
 	
 	#pragma omp parallel for num_threads( threads ) schedule( static )
 	for(size_t i = 0; i < rs.size(); i++){
-		if(deps[i] == 0 && rs[i].size() > 0) {
+		if(deps[i] == 0 && rs[i].size() > 0 && (i > upper || i % 2 == 0 )) {
 			size_t prefix, suffix;
 			for(prefix = 0; prefix < rs[i].size() && rs[i][prefix] == 0; prefix++);
 			prefixes[i] = ( (prefix)/pad ) * pad; // prefix is the first non zero entry
 			for(suffix = rs[i].size()-1; suffix >= prefix && rs[i][suffix] == 0; suffix--);
 			suffixes[i] = ( (suffix+pad-1+1)/pad) *pad; // suffix is the last (?) non zero entry
+			for(size_t j = 0; j < rs[i].size(); j++) {
+				rs[i][j] = field->getFactor(rs[i][j]);
+			}
 		}
 	}
 
@@ -217,13 +220,18 @@ void F4::pReduce(vector<F4Operations>& ops, vector<size_t>& deps, vector<vector<
 		{
 			size_t target = ops[i].targets[j];
 			field->mulSub(rs[target], rs[ops[i].opers[j]], ops[i].factors[j], prefixes[ ops[i].opers[j] ],suffixes[ ops[i].opers[j] ]);
+			
+			
 			deps[ target ]--;
-			if(deps[ target ] == 0 && rs[ target ].size() > 0) {
+			if(deps[ target ] == 0 && rs[ target ].size() > 0 && (target > upper || target % 2 == 0 )) {
 				size_t prefix, suffix;
 				for(prefix = 0; prefix < rs[ target ].size() && rs[ target ][prefix] == 0; prefix++);
 				prefixes[ target ] = ( prefix/pad )*pad;
 				for(suffix = rs[target].size()-1; suffix >= 0 && rs[target][suffix] == 0; suffix--);
 				suffixes[target] = ( (suffix+pad-1+1)/pad )*pad;
+				for(size_t j = 0; j < rs[target].size(); j++) {
+					rs[target][j] = field->getFactor(rs[target][j]);
+				}
 			}
 		}
 	}
@@ -393,7 +401,7 @@ void F4::reduce(F4PairSet& pairs, vector<Polynomial>& polys)
 
 	// ELIMINATE
 	double timer = seconds();
-	pReduce(ops, deps, rs);
+	pReduce(ops, deps, upper, rs);
 	ops.clear();
 	//timer = seconds();
 

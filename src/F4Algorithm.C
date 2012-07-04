@@ -167,11 +167,17 @@ void F4::gauss(vector<vector<coeffType> >& matrix, size_t upper, vector<bool>& e
 		p--;
 		empty[i] = !found;
 		if(found) {
+			vector<coeffType> logRow(matrix[i].size(), 0);
 			// Normalize
 			if(factor != 1) {
 				factor = field->inv(factor);
 				for(size_t j = p; j < matrix[i].size(); j++) {
 					matrix[i][j] = field->mul(matrix[i][j], factor);
+					logRow[j] = field->getFactor(matrix[i][j]);
+				}
+			} else {
+				for(size_t j = p; j < matrix[i].size(); j++) {
+					logRow[j] = field->getFactor(matrix[i][j]);
 				}
 			}
 			// Execute
@@ -179,13 +185,16 @@ void F4::gauss(vector<vector<coeffType> >& matrix, size_t upper, vector<bool>& e
 			for(size_t j = 2; j < upper; j+=2)
 			{
 				size_t k = (i+j)%upper;
+				vector<coeffType> temp(matrix[k].size(), 0);
 				if(matrix[k][p] != 0) {
-					coeffType factor = field->getFactor(matrix[k][p]);
+					/*coeffType factor = field->getFactor(matrix[k][p]);
 					for(size_t m = p; m < matrix[k].size(); m++)
 					{
 						// This is mulSub for primitives not vectors !
-						matrix[k][m] = field->mulSub(matrix[k][m], matrix[i][m], factor);
-					}
+						temp[m] = field->mulSub(matrix[k][m], matrix[i][m], factor);
+					}*/
+					size_t prefix = (p/field->pad)*field->pad;
+					field->mulSub(matrix[k], logRow, matrix[k][p], prefix, matrix[k].size());
 				}
 			}
 		}
@@ -406,8 +415,9 @@ void F4::reduce(F4PairSet& pairs, vector<Polynomial>& polys)
 	//timer = seconds();
 
 	vector<bool> empty(upper, false); // too large, FIX?
-	
+	//double gt = seconds();	
 	gauss(rs, upper, empty);
+	//*out << "----\nGauss (s):\t" << seconds()-gt << "\n";
 	// ELIMINATE END
 	reductionTime += seconds()-timer;
 	if(verbosity & 32) {

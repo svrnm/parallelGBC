@@ -58,9 +58,7 @@ void CoeffField::mulSub(std::vector<coeffType>& t, std::vector<coeffType>& o, co
 	for(size_t k = prefix; k < suffix; k+=__COEFF_FIELD_INTVECSIZE) {
 		// Not a beauty ...
 		#if PGBC_COEFF_BITS <= 8
-			if
-			__m128i y = _mm_set_epi8(omulc(15),omulc(14),omulc(13),omulc(12),omulc(11),omulc(10),omulc(9),omulc(8),
-						 omulc(7),omulc(6),omulc(5),omulc(4),omulc(3),omulc(2),omulc(1),omulc(0));
+			__m128i y = _mm_set_epi8(omulc(15),omulc(14),omulc(13),omulc(12),omulc(11),omulc(10),omulc(9),omulc(8), omulc(7),omulc(6),omulc(5),omulc(4),omulc(3),omulc(2),omulc(1),omulc(0));
 		#else
 			#if PGBC_COEFF_BITS <= 16
 				__m128i y = _mm_set_epi16(omulc(7),omulc(6),omulc(5),omulc(4),omulc(3),omulc(2),omulc(1),omulc(0));

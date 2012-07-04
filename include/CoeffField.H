@@ -74,7 +74,7 @@ class CoeffField
 {
 	public:
 		// The modulus, i.e. n of F_n
-		static const size_t pad = __COEFF_FIELD_INTVECSIZE * 4;
+		static const size_t pad = __COEFF_FIELD_INTVECSIZE;
 		const coeffType modn;
 
 	private:

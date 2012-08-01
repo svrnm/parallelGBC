@@ -77,6 +77,8 @@ Polynomial::Polynomial(std::vector<coeffType>& cs, std::vector<Term>& ts)
 	if(ts.size() > cs.size()) {
 		ts.erase(ts.begin() + cs.size(), ts.end());
 	}
+	terms = ts;
+	coeffs = cs;
 }
 
 Polynomial::Polynomial(std::vector<Monomial>& ms)

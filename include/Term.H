@@ -149,6 +149,7 @@ class Term {
 	public:
 		Term(TMonoid* owner, const std::vector<degreeType>& i) : instance(owner->createElement(i)) { }
 		Term(TMonoid* owner, const std::string& s, degreeType min) : instance(owner->createElement(s, min)) { }
+		Term() {}
 
 		degreeType operator[](size_t i) const {
 			return instance->at(i);

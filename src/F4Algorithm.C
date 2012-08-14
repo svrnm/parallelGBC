@@ -18,8 +18,14 @@
 #include <stdio.h>
 #include <unordered_map>
 #include <unordered_set>
+#include <tbb/concurrent_unordered_map.h>
+#include <tbb/concurrent_vector.h>
+#include <tbb/parallel_for.h>
+#include <tbb/blocked_range.h>
+#include <sstream>
 
 using namespace std;
+using namespace tbb;
 
 void F4::updatePairs(F4PairSet& pairs, vector<Polynomial>& polys, bool initial) 
 {
@@ -153,7 +159,7 @@ void printPolyMatrix(vector<Polynomial>& v, const TOrdering* O)
 
 }
 
-void F4::gauss(vector<vector<coeffType> >& matrix, size_t upper, vector<bool>& empty)
+void F4::gauss(coeffMatrix& matrix, size_t upper, vector<bool>& empty)
 {
 	for(size_t i = 1; i < upper; i+=2)
 	{
@@ -167,7 +173,7 @@ void F4::gauss(vector<vector<coeffType> >& matrix, size_t upper, vector<bool>& e
 		p--;
 		empty[i] = !found;
 		if(found) {
-			vector<coeffType> logRow(matrix[i].size(), 0);
+			coeffRow logRow(matrix[i].size(), 0);
 			// Normalize
 			if(factor != 1) {
 				factor = field->inv(factor);
@@ -185,7 +191,7 @@ void F4::gauss(vector<vector<coeffType> >& matrix, size_t upper, vector<bool>& e
 			for(size_t j = 2; j < upper; j+=2)
 			{
 				size_t k = (i+j)%upper;
-				vector<coeffType> temp(matrix[k].size(), 0);
+				coeffRow temp(matrix[k].size(), 0);
 				if(matrix[k][p] != 0) {
 					/*coeffType factor = field->getFactor(matrix[k][p]);
 					for(size_t m = p; m < matrix[k].size(); m++)
@@ -202,7 +208,7 @@ void F4::gauss(vector<vector<coeffType> >& matrix, size_t upper, vector<bool>& e
 
 }
 
-void F4::pReduce(vector<F4Operations>& ops, vector<size_t>& deps, size_t upper,vector<vector<coeffType> >& rs)
+void F4::pReduce(vector<F4Operations>& ops, vector<size_t>& deps, size_t upper, coeffMatrix& rs)
 {
 	vector<size_t> prefixes(rs.size(), 0);
 	vector<size_t> suffixes(rs.size(), 0);
@@ -246,61 +252,41 @@ void F4::pReduce(vector<F4Operations>& ops, vector<size_t>& deps, size_t upper,v
 	}
 }
 
-size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<F4Operations>& ops, vector<size_t>& deps, set<Term, Term::comparator>& terms, vector<vector<coeffType> >& rs)
+struct SetupRow
 {
-	double timer = seconds();
-	// SELECTION
-	Term::comparator tog(O, true);
-	vector<F4Pair> tmp(pairs.begin(), pairs.end());
-	sort(tmp.begin(), tmp.end(), s());
-	currentDegree = tmp.begin()->sugar;
-	if(verbosity & 16) {
-		*out << "Sugar degree:\t" <<currentDegree << "\n";
-	}
-	vector<pair<size_t, Term> > rows;
-	size_t index;
-	// Create pivots
-	unordered_map<Term, size_t> pivots;
+	Polynomial& current;
+	Term& ir;
+	tbb::concurrent_vector<pair<size_t, Term> >& rows;
+	tbb::concurrent_unordered_map<Term, size_t, std::hash<Term> >& pivots;
+	tbb::concurrent_unordered_map<Term, vector<pair<size_t, coeffType> >, std::hash<Term> >& pivotOps;
+	tbb::concurrent_unordered_set<Term, std::hash<Term> >& termsUnordered;
+	tbb::concurrent_vector<tbb::concurrent_vector<Monomial> >& rightSide;
+	vector<Polynomial>& groebnerBasis;
+	vector<bool>& inGroebnerBasis;
+	size_t i;
 
-	for(index = 0; index < tmp.size() && tmp[index].sugar == currentDegree; index++)
+	SetupRow( Polynomial& current, Term& ir, tbb::concurrent_vector<pair<size_t, Term> >& rows, tbb::concurrent_unordered_map<Term, size_t, std::hash<Term> >& pivots, tbb::concurrent_unordered_map<Term, vector<pair<size_t, coeffType> >, std::hash<Term> >& pivotOps, tbb::concurrent_unordered_set<Term, std::hash<Term> >& termsUnordered, tbb::concurrent_vector<tbb::concurrent_vector<Monomial> >& rightSide, vector<Polynomial>& groebnerBasis, vector<bool>& inGroebnerBasis, size_t i)
+	:
+	current(current),
+	ir(ir),
+	rows(rows),
+	pivots(pivots),
+	pivotOps(pivotOps),
+	termsUnordered(termsUnordered),
+	rightSide(rightSide),
+	groebnerBasis(groebnerBasis),
+	inGroebnerBasis(inGroebnerBasis),
+	i(i)
+
+	{}
+
+	void operator() (tbb::blocked_range<size_t>& range) const
 	{
-		rows.push_back(make_pair(tmp[index].i, tmp[index].LCM));
-		rows.push_back(make_pair(tmp[index].j, tmp[index].LCM));
-		pivots.insert(make_pair(tmp[index].LCM, 2*index));
-	}
-	pairs.clear();
-	pairs.insert(tmp.begin() + index, tmp.end());
-	tmp.clear();
-	// SELECTION END
-
-	size_t upper = 2*index;
-
-	unordered_map<Term, vector<pair<size_t, coeffType> > > pivotOps;
-	unordered_set<Term> termsUnordered;
-
-	vector<vector<Monomial> > rightSide;
-	rightSide.reserve(rows.size());
-
-	//double testtimer = 0;
-
-	for(size_t i = 0; i < rows.size(); i++) 
-	{
-		size_t currentRow = rows[i].first;
-		rightSide.push_back( vector<Monomial>() );
-		//rows[i].second->divToVector(groebnerBasis[currentRow].LT(), ir);
-		// For the pivot rows (even rows and lower part) we start at 1 
-
-		Term ir = rows[i].second.div(groebnerBasis[currentRow].LT());
-
-		for(size_t j =  (i > upper || i % 2 == 0 ? 1 : 0);  j < groebnerBasis[currentRow].size() ; j++) 
-		{
-			coeffType coeff = groebnerBasis[currentRow].coeff(j);
-			// 50% - inserting in the hash map is expensive
-			Term t = ir.mul(groebnerBasis[currentRow].term(j));
-			
+		for(size_t j = range.begin(); j != range.end(); j++) {
+			coeffType coeff = current.coeff(j);
+			Term t = ir.mul(current.term(j));
 			bool wontFound = termsUnordered.count(t) > 0;	
 			bool found = false;
-
 			// If there is not yet a pivot for t, try to create one
 			if(!wontFound) {
 				found = pivots.count(t) > 0;
@@ -315,8 +301,9 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<F4Operati
 						}
 					}
 					if(found) {
-						rows.push_back(make_pair(element, t));
-						pivots.insert(make_pair(t, rows.size()-1));
+						tbb::concurrent_vector<std::pair<size_t, Term> >::iterator ret = rows.push_back(make_pair(element, t));
+						rightSide.push_back( tbb::concurrent_vector<Monomial>() );
+						pivots.insert(make_pair(t, std::distance(rows.begin(), ret)));
 					}
 				}
 			}
@@ -328,28 +315,105 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<F4Operati
 				rightSide[i].push_back( make_pair(coeff, t) );
 				if(!wontFound) termsUnordered.insert(t);
 			}
+	
 		}
 	}
+};
+
+struct SetupDenseRow {
+
+	set<Term, Term::comparator>& terms;
+	coeffMatrix& rs;
+	tbb::concurrent_vector<tbb::concurrent_vector<Monomial> >& rightSide;
+	const TOrdering* O;
+
+  SetupDenseRow(set<Term, Term::comparator>& terms, coeffMatrix& rs, tbb::concurrent_vector<tbb::concurrent_vector<Monomial> >& rightSide, const TOrdering* O) 
+	: terms(terms), rs(rs), rightSide(rightSide), O(O)
+	{}
+
+
+	void operator() (tbb::blocked_range<size_t>& range) const
+	{
+		for(size_t i = range.begin(); i != range.end(); i++) {
+			size_t j = 0;
+			size_t k = 0;
+			sort(rightSide[i].begin(), rightSide[i].end(), MonomialComparator(O));
+			for(set<Term, Term::comparator>::iterator it = terms.begin(); j < rightSide[i].size() /*&& it != terms.end()*/; it++) {
+				if(rightSide[i][j].second == *it) {
+					rs[i][k] = rightSide[i][j].first ;
+					j++;
+				}
+				k++;
+			}
+		}
+
+	}
+};
+
+size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<F4Operations>& ops, vector<size_t>& deps, set<Term, Term::comparator>& terms, coeffMatrix& rs)
+{
+	double timer = seconds();
+	double timer2 = seconds();
+	// SELECTION
+	Term::comparator tog(O, true);
+	vector<F4Pair> tmp(pairs.begin(), pairs.end());
+	sort(tmp.begin(), tmp.end(), s());
+	currentDegree = tmp.begin()->sugar;
+	if(verbosity & 16) {
+		*out << "Sugar degree:\t" <<currentDegree << "\n";
+	}
+	tbb::concurrent_vector<pair<size_t, Term> > rows;
+	size_t index;
+	// Create pivots
+	tbb::concurrent_unordered_map<Term, size_t, std::hash<Term> > pivots;
+	tbb::concurrent_unordered_map<Term, vector<pair<size_t, coeffType> >, std::hash<Term> > pivotOps;
+	tbb::concurrent_unordered_set<Term, std::hash<Term> > termsUnordered;
+
+
+
+	for(index = 0; index < tmp.size() && tmp[index].sugar == currentDegree; index++)
+	{
+		rows.push_back(make_pair(tmp[index].i, tmp[index].LCM));
+		rows.push_back(make_pair(tmp[index].j, tmp[index].LCM));
+		pivots.insert(make_pair(tmp[index].LCM, 2*index));
+	}
+	pairs.clear();
+	pairs.insert(tmp.begin() + index, tmp.end());
+	tmp.clear();
+	// SELECTION END
+
+	size_t upper = 2*index;
+
+	tbb::concurrent_vector<tbb::concurrent_vector<Monomial> > rightSide(rows.size(), tbb::concurrent_vector<Monomial>() );
+
+	//double testtimer = 0;
+	cout << "SELECT:\t" << (seconds() - timer2) << "\n";
+	timer2 = seconds();
+	for(size_t i = 0; i < rows.size(); i++) 
+	{
+		Polynomial& current = groebnerBasis[ rows[i].first ];
+		Term ir = rows[i].second.div(current.LT());
+		
+		// For the pivot rows (even rows and lower part) we start at 1 
+		tbb::parallel_for(blocked_range<size_t>((i > upper || i % 2 == 0 ? 1 : 0), current.size()), SetupRow(current, ir, rows, pivots, pivotOps, termsUnordered, rightSide, groebnerBasis, inGroebnerBasis, i));
+	}
+	cout << "SETUP1:\t" << (seconds() - timer2) << "\n";
+	timer2 = seconds();
 
 	terms.insert(termsUnordered.begin(), termsUnordered.end());
 
 	size_t pad = field->pad;
-	rs.assign(rightSide.size(), vector<coeffType>( (( terms.size()+pad-1 )/ pad ) * pad, 0) );
-	for(size_t i = 0; i < rightSide.size(); i++) {
-		size_t j = 0;
-		size_t k = 0;
-		for(set<Term, Term::comparator>::iterator it = terms.begin(); j < rightSide[i].size() /*&& it != terms.end()*/; it++) {
-			if(rightSide[i][j].second == *it) {
-				rs[i][k] = rightSide[i][j].first ;
-				j++;
-			}
-			k++;
-		}
-	}
-	rightSide.clear();
+	rs.assign(rightSide.size(), coeffRow( (( terms.size()+pad-1 )/ pad ) * pad, 0) );
 	
+	tbb::parallel_for(blocked_range<size_t>(0, rightSide.size()), SetupDenseRow(terms, rs, rightSide, O));
+	
+	rightSide.clear();
+	cout << "SETUP2:\t" << (seconds() - timer2) << "\n";
+	timer2 = seconds();
+
+
 	if(verbosity & 64) {
-		*out << "Matrix (r x c):\t" << rs.size() << " x " << terms.size() + pivots.size() << "\n";
+		*out << "Matrix (r x c):\t" << rs.size() << " x " << terms.size() << "+" << pivots.size() << "\n";
 	}
 
 	map<Term, vector<pair<size_t, coeffType> >, Term::comparator> pivotOpsOrdered(pivotOps.begin(), pivotOps.end(), tog);
@@ -396,6 +460,8 @@ size_t F4::prepare(F4PairSet& pairs, vector<Polynomial>& polys, vector<F4Operati
 	prepareTime += seconds() - timer;
 	//*out << "Operations:\t" << ops.size() << "\n";
 	//*out << "Preparation:\t" << seconds() - timer << "\n";
+	cout << "SETUP3:\t" << (seconds() - timer2) << "\n";
+	cout << "Prep.:\t" << seconds() - timer << "\n";
 	return upper;
 }
 
@@ -404,9 +470,30 @@ void F4::reduce(F4PairSet& pairs, vector<Polynomial>& polys)
 	Term::comparator tog(O, true);
 	set<Term, Term::comparator> terms(tog);
 	vector<F4Operations > ops;
-	vector<vector<coeffType> > rs;
+	coeffMatrix rs;
 	vector<size_t> deps;
 	size_t upper = prepare(pairs, polys, ops, deps, terms, rs);
+
+	/*cout << "Stats:\n";
+	cout << "Pairs:\t" << pairs.size() << "\n";
+	size_t k = 0;
+	size_t l = 0;
+	for(size_t i = 0; i < groebnerBasis.size(); i++) {
+		k += groebnerBasis[i].size();
+		l += inGroebnerBasis[i]? 1 : 0;
+	}
+	cout << "GB:\t" << groebnerBasis.size() << "\n";
+	cout << "GB terms:\t" << k << "\n";
+	cout << "inGB:\t" << l << "\n";
+	k = 0;
+	for(size_t i = 0; i < ops.size(); i++) {
+		k += ops[i].size();
+	}
+	cout << "Levels:\t" << ops.size() << "\n";
+	cout << "Ops:\t" << k << "\n";
+	cout << "Terms:\t" << terms.size() << "\n";
+	cout << "=======\n";
+*/
 
 	// ELIMINATE
 	double timer = seconds();

@@ -26,6 +26,10 @@
 #include <iostream>
 #include <xmmintrin.h>
 #include <mmintrin.h>
+#include <tbb/scalable_allocator.h>
+#include <tbb/tbb_allocator.h>
+#include <tbb/concurrent_vector.h>
+
 #define BREAKPOINT {while(getchar() != '\n');}
 
 // By default we use 16 bits for the coefficients
@@ -63,6 +67,8 @@
 
 // define the type for coefficients
 typedef __COEFF_FIELD_NUMBERTYPE coeffType;
+typedef std::vector<coeffType> coeffRow;
+typedef std::vector<coeffRow> coeffMatrix;
 
 /*
  * This class represents the coefficient field. A coefficient is a
@@ -79,9 +85,9 @@ class CoeffField
 
 	private:
 		// precalculated exponents and logarithms
-		std::vector<coeffType> exps;
-		std::vector<coeffType> logs;
-		std::vector<coeffType> invs;
+		coeffRow exps;
+		coeffRow logs;
+	  coeffRow invs;
 
 		// array with k times the modules for SSE computations
 		__m128i modnvec;
@@ -136,6 +142,6 @@ class CoeffField
 			return b > a ? a + modn - b : a - b;
 		}
 
-		void mulSub(std::vector<coeffType>& t, std::vector<coeffType>& o, coeffType c, size_t prefix, size_t suffix) const;
+		void mulSub(coeffRow& t, coeffRow& o, coeffType c, size_t prefix, size_t suffix) const;
 };
 #endif

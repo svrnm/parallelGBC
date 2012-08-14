@@ -60,11 +60,11 @@ struct F4Pivot {
 };
 
 struct F4Operations {
-		std::vector<size_t> targets;
-		std::vector<size_t> opers;
-		std::vector<coeffType> factors;
+		std::vector<int32_t> targets;
+		std::vector<int32_t> opers;
+		coeffRow factors;
 
-		void push_back(size_t t, size_t o, coeffType f) {
+		void push_back(int32_t t, int32_t o, coeffType f) {
 			targets.push_back( t );
 			opers.push_back( o );
 			factors.push_back( f );
@@ -108,9 +108,9 @@ class F4 {
 
 		// select() is part of reduce
 		
-		void gauss(std::vector<std::vector<coeffType> >& matrix, size_t upper, std::vector<bool>& empty);
-		void pReduce(std::vector<F4Operations>& ops, std::vector<size_t>& deps, size_t upper, std::vector<std::vector<coeffType> >& rs);
-		size_t prepare(F4PairSet& pairs, std::vector<Polynomial>& polys, std::vector<F4Operations>& ops, std::vector<size_t>& deps, std::set<Term, Term::comparator>& terms, std::vector<std::vector<coeffType> >& rs);
+		void gauss(coeffMatrix& matrix, size_t upper, std::vector<bool>& empty);
+		void pReduce(std::vector<F4Operations>& ops, std::vector<size_t>& deps, size_t upper, coeffMatrix& rs);
+		size_t prepare(F4PairSet& pairs, std::vector<Polynomial>& polys, std::vector<F4Operations>& ops, std::vector<size_t>& deps, std::set<Term, Term::comparator>& terms, coeffMatrix& rs);
 		void reduce(F4PairSet& pairs, std::vector<Polynomial>& polys);
 		void updatePairs(F4PairSet& pairs, std::vector<Polynomial>& polys, bool initial = false);
 		std::vector<Polynomial> operator()(std::vector<Polynomial>& generators, const TOrdering* O, CoeffField* field, int threads = 1, int verbosity = 0, std::ostream& output = std::cout);

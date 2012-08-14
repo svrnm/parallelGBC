@@ -64,7 +64,7 @@ ostream& operator<< (ostream& out, const vector<Polynomial> &polys)
 	return out;
 }
 
-Polynomial::Polynomial(std::vector<coeffType>& cs, std::vector<Term>& ts)
+Polynomial::Polynomial(coeffRow& cs, std::vector<Term>& ts)
 {
 	if(ts.size() > 0) {
 		sugarDegree = ts[0].deg();
@@ -133,7 +133,7 @@ Polynomial::Polynomial(std::vector<Monomial>& ms, bool purify)
 
 Polynomial Polynomial::mul(const Term& t) const {
 	vector<Term> ts(terms.begin(), terms.end());
-	vector<coeffType> cs(coeffs.begin(), coeffs.end());
+	coeffRow cs(coeffs.begin(), coeffs.end());
 	for(size_t i = 0; i < size(); i++) {
 		ts[i] = t.mul(ts[i]);
 	}

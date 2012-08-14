@@ -26,7 +26,7 @@ typedef std::pair<coeffType, Term> Monomial;
 
 class Polynomial {
 	private:
-		std::vector<coeffType> coeffs;
+		coeffRow coeffs;
 		std::vector<Term> terms;
 		degreeType sugarDegree;
 
@@ -37,7 +37,7 @@ class Polynomial {
 		Polynomial() {
 			sugarDegree = 0;
 		}
-		Polynomial(std::vector<coeffType>& cs, std::vector<Term>& ts);
+		Polynomial(coeffRow& cs, std::vector<Term>& ts);
 		Polynomial(std::vector<Monomial>& ms);
 		Polynomial(const Term& t);
 		Polynomial(std::vector<Monomial>& ms, bool purify);

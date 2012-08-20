@@ -14,26 +14,36 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <set>
 #include "../include/F4Utils.H"
+#include "../include/Polynomial.H"
 
 using namespace std;
 
-template<typename T> ostream& operator<< (ostream& out, const vector<T>& v)
+void printPolyMatrix(vector<Polynomial>& v, const TOrdering* O)
 {
-  out << "[ ";
-  for(size_t i = 0; i < v.size(); i++)
-  {
-    out << v[i] << " ";
-  }
-  out << "]";
-  return out;
+
+	Term::comparator tog(O, true);
+	set<Term, Term::comparator> terms(tog);
+
+
+	for(size_t i = 0; i < v.size(); i++) {
+		for(size_t j = 0; j < v[i].size(); j++) {
+			terms.insert(v[i][j].second);
+		}
+	}
+
+
+	for(size_t i = 0; i < v.size(); i++) {
+		set<Term, Term::comparator>::iterator it = terms.begin();
+		for(size_t j = 0; j < v[i].size(); j++) {
+			for(;*it != v[i][j].second;it++) { std::cout << " 0 "; }
+			std::cout << " " << v[i][j].first << " ";
+			it++;
+		}
+		for(;it != terms.end(); it++) { std::cout << " 0 "; }
+		std::cout << "\n";
+	}
+
 }
 
-template<typename T> ostream& operator<< (ostream& out, const vector<vector<T> >& v)
-{
-  for(size_t i = 0; i < v.size(); i++)
-  {
-    out << v[i] << "\n";
-  }
-  return out;
-}

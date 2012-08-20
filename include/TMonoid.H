@@ -41,8 +41,6 @@
 	typedef int32_t degreeType;
 #endif
 
-
-
 class TermInstance;
 
 class TMonoid {

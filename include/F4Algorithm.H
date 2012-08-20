@@ -13,7 +13,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 #ifndef F4_ALGORITHM_H
 #define F4_ALGORITHM_H
 #include <set>
@@ -25,66 +25,123 @@
 #include <boost/bind.hpp>
 #include <iostream>
 #include "../include/F4Utils.H"
+#include <tbb/concurrent_unordered_map.h>
+#include <tbb/concurrent_vector.h>
+#include <tbb/blocked_range.h>
 
-struct F4Pair {
-		Term LCM;
-		size_t i;
-		size_t j;
-		bool marked;
-		degreeType sugar;
-
-		F4Pair(const Term& LCM, size_t i, size_t j, bool marked, degreeType sugar) : LCM(LCM), i(i), j(j), marked(marked), sugar(sugar)	 {};
-
-	struct comparator {
-		const TOrdering* O;
-
-		comparator(const TOrdering* O) : O(O) {}
-
-		bool operator() (const F4Pair& lhs, const F4Pair& rhs) const 
-		{
-			return O->cmp(lhs.LCM, rhs.LCM) < 0;
-		}
-	};
-};
-
-struct F4Pivot {
-		const Term column;
-		size_t row;
-		std::vector<std::pair<size_t, coeffType> > operations;
-
-		F4Pivot(const Term& column, size_t row) : column(column), row(row) {}
-
-		void addOperation(size_t row, coeffType factor) {
-			operations.push_back(std::make_pair(row, factor));
-		}
-};
-
-struct F4Operations {
-		std::vector<int32_t> targets;
-		std::vector<int32_t> opers;
-		coeffRow factors;
-
-		void push_back(int32_t t, int32_t o, coeffType f) {
-			targets.push_back( t );
-			opers.push_back( o );
-			factors.push_back( f );
-		}
-
-		size_t size() {
-			return targets.size();
-		}
-};
-
-typedef std::set<F4Pair,F4Pair::comparator> F4PairSet;
 
 class F4 {
 	public:
+
+		struct Pair {
+			Term LCM;
+			size_t i;
+			size_t j;
+			bool marked;
+			degreeType sugar;
+
+			Pair(const Term& LCM, size_t i, size_t j, bool marked, degreeType sugar) : LCM(LCM), i(i), j(j), marked(marked), sugar(sugar)	 {};
+
+			struct comparator {
+				const TOrdering* O;
+
+				comparator() : O(NULL) {}
+				comparator(const TOrdering* O) : O(O) {}
+
+				bool operator() (const Pair& lhs, const Pair& rhs) const 
+				{
+					return O->cmp(lhs.LCM, rhs.LCM) < 0;
+				}
+			};
+
+			struct sugarComparator
+			{
+				bool operator() (const F4::Pair& a, const F4::Pair& b)
+				{
+					return a.sugar < b.sugar;
+				}
+			};
+
+
+		};
+
+
+
+		struct Pivot {
+			const Term column;
+			size_t row;
+			std::vector<std::pair<size_t, coeffType> > operations;
+
+			Pivot(const Term& column, size_t row) : column(column), row(row) {}
+
+			void addOperation(size_t row, coeffType factor) {
+				operations.push_back(std::make_pair(row, factor));
+			}
+		};
+
+		struct Operations {
+			std::vector<int32_t> targets;
+			std::vector<int32_t> opers;
+			coeffRow factors;
+
+			void push_back(int32_t t, int32_t o, coeffType f) {
+				targets.push_back( t );
+				opers.push_back( o );
+				factors.push_back( f );
+			}
+
+			size_t size() {
+				return targets.size();
+			}
+		};
+
+		struct SetupRow
+		{
+			F4& f4;
+			Polynomial& current;
+			Term& ir;
+			size_t i;
+
+			SetupRow(F4& f4, Polynomial& current, Term& ir, size_t i) : f4(f4), current(current), ir(ir), i(i) {}
+
+			void operator() (tbb::blocked_range<size_t>& range) const
+			{
+				f4.setupRow(current, ir, i, range);
+			}
+		};
+
+		struct SetupDenseRow {
+			F4& f4;
+
+			SetupDenseRow(F4& f4) : f4(f4) {}
+
+			void operator() (tbb::blocked_range<size_t>& range) const
+			{
+				f4.setupDenseRow(range);
+			}
+		};
+
+		typedef std::set<Pair,Pair::comparator> PairSet;
+
 		std::vector<Polynomial> groebnerBasis;
 		std::vector<bool> inGroebnerBasis;
 		const TOrdering* O;
 		CoeffField* field;
 		int threads;
 		degreeType currentDegree;
+
+		// Datastructures for computation:
+		PairSet pairs;
+		std::set<Term, Term::comparator> terms;
+
+		tbb::concurrent_vector<std::pair<size_t, Term> > rows;
+		tbb::concurrent_unordered_map<Term, size_t, std::hash<Term> > pivots;
+		tbb::concurrent_unordered_map<Term, std::vector<std::pair<size_t, coeffType> >, std::hash<Term> > pivotOps;
+		tbb::concurrent_unordered_set<Term, std::hash<Term> > termsUnordered;
+		tbb::concurrent_vector<tbb::concurrent_vector<Monomial> > rightSide;
+		std::vector<F4::Operations > ops;
+		coeffMatrix rs;
+		std::vector<size_t> deps;
 
 		/* Verbosity, which can be changed during runtime, nothing which should
 		 * influence performance.
@@ -106,13 +163,18 @@ class F4 {
 		double prepareTime;
 		double updateTime;
 
-		// select() is part of reduce
-		
+		// Helper functions for groebner bases computation
 		void gauss(coeffMatrix& matrix, size_t upper, std::vector<bool>& empty);
-		void pReduce(std::vector<F4Operations>& ops, std::vector<size_t>& deps, size_t upper, coeffMatrix& rs);
-		size_t prepare(F4PairSet& pairs, std::vector<Polynomial>& polys, std::vector<F4Operations>& ops, std::vector<size_t>& deps, std::set<Term, Term::comparator>& terms, coeffMatrix& rs);
-		void reduce(F4PairSet& pairs, std::vector<Polynomial>& polys);
-		void updatePairs(F4PairSet& pairs, std::vector<Polynomial>& polys, bool initial = false);
+		void pReduce(std::vector<F4::Operations>& ops, std::vector<size_t>& deps, size_t upper, coeffMatrix& rs);
+		size_t prepare(std::vector<Polynomial>& polys, std::set<Term, Term::comparator>& terms);
+		void reduce(std::vector<Polynomial>& polys);
+		void updatePairs(std::vector<Polynomial>& polys);
+
+		void setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<size_t>& range);
+		void setupDenseRow(tbb::blocked_range<size_t>& range);
+
+
+		// Call this operator to compute the groebner basis of "generators"
 		std::vector<Polynomial> operator()(std::vector<Polynomial>& generators, const TOrdering* O, CoeffField* field, int threads = 1, int verbosity = 0, std::ostream& output = std::cout);
 };
 

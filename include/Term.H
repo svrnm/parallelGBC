@@ -208,6 +208,7 @@ class Term {
 				const TOrdering* O;
 				bool gt; // if greater
 
+				comparator() : O(NULL), gt(false) {}
 				comparator(const TOrdering* O, bool gt = false) : O(O), gt(gt) {}
 
 				bool operator() (const Term& lhs, const Term& rhs) const

@@ -19,7 +19,6 @@
 #include <string>
 #include "TMonoid.H"
 
-
 class Term;
 
 class TOrdering {

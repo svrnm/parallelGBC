@@ -34,7 +34,7 @@ std::ostream& operator<< (std::ostream &out, const Term& term)
 				first = false;
 				out << "x[" << (i+1) << "]";
 				if(term[i] > 1)
-				{ 
+				{
 					out << "^" << term[i];
 				}
 			}
@@ -62,28 +62,4 @@ const TermInstance* TermInstance::lcm(const TermInstance* other) const {
 	t->setDegree();
 	t->setHash();
 	return owner->createElement(t);
-}
-
-std::vector<Term> Term::mulAll(Polynomial& in, int threads, double& timer) const {
-	std::vector<Term> result;
-
-	if(this->deg() == 0) {
-		for(size_t i = 0; i < in.size(); i++) {
-			result.push_back( in[i].second );
-		}
-		return result;
-	}	
-
-	//double helper = seconds();
-	//vector<TermInstance*> tmp(in.size(), NULL);
-	// This doesn't really speedup (the critical section takes the most computation time)
-	//#pragma omp parallel for num_threads( 1 ) 
-	for(size_t i = 0; i < in.size(); i++) {
-		//result[i] = Term(owner, in[i].second->indets, indets);
-		result.push_back( in[i].second.mul( *this ) );
-		//#pragma omp critical
-		//result[i] = owner->createElement(tmp[i]);
-	}
-	//timer += seconds() - helper;
-	return result;
 }

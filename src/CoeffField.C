@@ -40,8 +40,8 @@ CoeffField::CoeffField(coeffType modn) : modn(modn)
 			logs[exps[i]] = i;
 		} while( exps[i] != 1);
 	} while( i != modn - 1);
-	exps.insert(exps.end(), exps.begin()+1, exps.end());
 
+	exps.insert(exps.end(), exps.begin()+1, exps.end());
 
 	for(coeffType i = 0; i < modn; i++) {
 		invs[i] = exps[modn - 1 - logs[ i ] ];
@@ -57,15 +57,15 @@ void CoeffField::mulSub(coeffRow& t, coeffRow& o, coeffType c, size_t prefix, si
 	size_t i = prefix / __COEFF_FIELD_INTVECSIZE;
 	for(size_t k = prefix; k < suffix; k+=__COEFF_FIELD_INTVECSIZE) {
 		// Not a beauty ...
-		#if PGBC_COEFF_BITS <= 8
-			__m128i y = _mm_set_epi8(omulc(15),omulc(14),omulc(13),omulc(12),omulc(11),omulc(10),omulc(9),omulc(8), omulc(7),omulc(6),omulc(5),omulc(4),omulc(3),omulc(2),omulc(1),omulc(0));
-		#else
-			#if PGBC_COEFF_BITS <= 16
-				__m128i y = _mm_set_epi16(omulc(7),omulc(6),omulc(5),omulc(4),omulc(3),omulc(2),omulc(1),omulc(0));
-			#else
-				__m128i y = _mm_set_epi32(omulc(3),omulc(2),omulc(1),omulc(0));
-			#endif
-		#endif
+#if PGBC_COEFF_BITS <= 8
+		__m128i y = _mm_set_epi8(omulc(15),omulc(14),omulc(13),omulc(12),omulc(11),omulc(10),omulc(9),omulc(8), omulc(7),omulc(6),omulc(5),omulc(4),omulc(3),omulc(2),omulc(1),omulc(0));
+#else
+#if PGBC_COEFF_BITS <= 16
+		__m128i y = _mm_set_epi16(omulc(7),omulc(6),omulc(5),omulc(4),omulc(3),omulc(2),omulc(1),omulc(0));
+#else
+		__m128i y = _mm_set_epi32(omulc(3),omulc(2),omulc(1),omulc(0));
+#endif
+#endif
 		// x[i] = x[i] + ( (y > x[i] & modn) ) - y;
 		x[i] = __COEFF_FIELD_VECADD(x[i], __COEFF_FIELD_VECSUB(__COEFF_FIELD_VECAND(__COEFF_FIELD_VECGT(y, x[i]), modnvec), y));
 		i++;

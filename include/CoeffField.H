@@ -26,8 +26,6 @@
 #include <iostream>
 #include <xmmintrin.h>
 #include <mmintrin.h>
-#include <tbb/scalable_allocator.h>
-#include <tbb/tbb_allocator.h>
 #include <tbb/concurrent_vector.h>
 
 #define BREAKPOINT {while(getchar() != '\n');}

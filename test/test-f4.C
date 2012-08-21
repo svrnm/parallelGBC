@@ -35,6 +35,7 @@
 
 using namespace boost;
 using namespace std;
+using namespace parallelGBC;
 
 int main(int argc, char* argv[]) {
 	// Input stuff, example below ...
@@ -95,20 +96,11 @@ int main(int argc, char* argv[]) {
 	// 2. Create a power product monoid for the terms. Pay attention that ordering and monoid match.
 	TMonoid m(max);
 	// 3. Create a coefficient field.
-	CoeffField* cf = new CoeffField(101);
+	CoeffField* cf = new CoeffField(32003);
 	// 4. Read in the polynomials from string 't'. The second parameter is the power product monoid.
 	vector<Polynomial> list = Polynomial::createList(t, m);
-	// 5. Before you can compute the groebner basis, you have to order your polynomials by term
-	// ordering and have to bring in the coefficients to your coefficient field. Finally you have
-	// to normalize your polynomials. Remark: This step will be merged into f4(...) in a later release,
-	// doing everything twice shouldn't harm.
-	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::order), _1, o));
-	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::bringIn), _1, cf, false));
-	// Create the f4 computer.
-	F4 f4;
-	// Compute the groebner basis for the polynomials in 'list' with 'threads' threads/processors 
 
-	for(size_t i = 0; i < list.size(); i++) {
+for(size_t i = 0; i < list.size(); i++) {
 	  if(i > 0) {
 				cout << ", ";
 			}
@@ -116,6 +108,30 @@ int main(int argc, char* argv[]) {
 	}
   cout << "\n";
 
+
+
+
+	// 5. Before you can compute the groebner basis, you have to order your polynomials by term
+	// ordering and have to bring in the coefficients to your coefficient field. Finally you have
+	// to normalize your polynomials. Remark: This step will be merged into f4(...) in a later release,
+	// doing everything twice shouldn't harm.
+	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::order), _1, o));
+	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::bringIn), _1, cf, false));
+
+for(size_t i = 0; i < list.size(); i++) {
+	  if(i > 0) {
+				cout << ", ";
+			}
+			cout << list[i];
+	}
+  cout << "\n";
+
+
+	// Create the f4 computer.
+	F4 f4;
+	// Compute the groebner basis for the polynomials in 'list' with 'threads' threads/processors 
+
+	
 	vector<Polynomial> result = f4(list, o, cf, threads, verbosity);
 	// Return the size of the groebner basis
 	if(printGB > 0)

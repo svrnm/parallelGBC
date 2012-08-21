@@ -71,19 +71,15 @@ const TermInstance* TMonoid::createElement(TermInstance* t)
 
 const TermInstance* TMonoid::createElement(const vector<degreeType>& v) 
 {
-	degreeType* r = (degreeType*)calloc(N, sizeof(degreeType));
-	long m = max(N, v.size());
-	for(long i = 0; i < m; i++) {
-		r[i] = (degreeType)v[i];
-	}
-	return createElement(new TermInstance(this, r));
+	std::vector<degreeType> c = v;
+	c.resize(N, 0);
+	return createElement(new TermInstance(this, c));
 }
 
 const TermInstance* TMonoid::createElement(const string& s, degreeType min) { 
-	degreeType* v = (degreeType*)calloc(N, sizeof(degreeType));
+	//degreeType* v = (degreeType*)calloc(N, sizeof(degreeType));
+	vector<degreeType> v(N, 0);
 	if(s == "1") {
-		//return createElement(new TermInstance(this, v));
-		free(v);
 		return one;
 	} else {
 		std::vector<std::string> strs;

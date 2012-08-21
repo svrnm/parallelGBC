@@ -13,20 +13,24 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 #ifndef F4_UTILS_H
 #define F4_UTILS_H
 #include <sys/time.h>
 #include <iostream>
 #include <vector>
+#include <sys/types.h>
+#include <sys/sysinfo.h>
 #include "Polynomial.H"
 
 inline double seconds()
 {    
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
 	return (double)tv.tv_sec + ((double)tv.tv_usec)/1000000.0;
 }
+
+void mem();
 
 void printPolyMatrix(std::vector<Polynomial>& v, const TOrdering* O);
 #endif

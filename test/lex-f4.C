@@ -35,6 +35,7 @@
 
 using namespace boost;
 using namespace std;
+using namespace parallelGBC;
 
 int main(int argc, char* argv[]) {
 	// Input stuff, example below ...

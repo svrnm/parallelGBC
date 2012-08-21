@@ -19,13 +19,8 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
-#include "F4Utils.H"
 #include <unordered_set>
 #include <tbb/concurrent_unordered_set.h>
-#include <tbb/scalable_allocator.h>
-#include <tbb/tbb_allocator.h>
-
-
 
 #ifndef PGBC_DEGREE_BITS
 	#ifdef PGBC_COEFF_BITS

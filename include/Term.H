@@ -64,6 +64,15 @@ class TermInstance {
 			setDegree();
 		}
 
+		TermInstance(TMonoid* const m, const std::vector<degreeType>& v) : owner(m) {
+			indets = alloc();
+			for(size_t i = 0; i < owner->N; i++) {
+				indets[i] = v[i];
+			}
+			setHash();
+			setDegree();
+		}
+
 		size_t getHash() const {
 			return hash;
 		}
@@ -199,10 +208,6 @@ class Term {
 			return instance->size();
 		}
 
-		// Multiplies a set of terms with the current term
-		// Uses OpenMP-Parallelization
-		std::vector<Term> mulAll(Polynomial& in, int threads, double& timer) const;
-		
 		class comparator {
 			public:
 				const TOrdering* O;

@@ -20,35 +20,45 @@
 CoeffField::CoeffField(coeffType modn) : modn(modn)
 {
 	modnvec = __COEFF_FIELD_VECSET1( modn );
-
-	coeffType i;
-	coeffType w = 1;
+	
 	exps.assign(modn, 0);
 	logs.assign(modn, 0);
 	invs.assign(modn, 0);
+
 	logs[0] = 0;
 	exps[0] = 1;
-	do
-	{
-		logs[1] = 0;
-		w++;
-		i = 0;
-		do
+
+	if(modn > 2) {
+		coeffType i;
+		coeffType w = 1;
+				do
 		{
-			i++;
-			exps[i] = (w * exps[i-1]) % modn;
-			logs[exps[i]] = i;
-		} while( exps[i] != 1);
-	} while( i != modn - 1);
+			logs[1] = 0;
+			w++;
+			i = 0;
+			do
+			{
+				i++;
+				exps[i] = (w * exps[i-1]) % modn;
+				logs[exps[i]] = i;
+			} while( exps[i] != 1);
+		} while( i != modn - 1);
 
-	exps.insert(exps.end(), exps.begin()+1, exps.end());
+		exps.insert(exps.end(), exps.begin()+1, exps.end());
 
-	for(coeffType i = 0; i < modn; i++) {
-		invs[i] = exps[modn - 1 - logs[ i ] ];
+		for(coeffType i = 0; i < modn; i++) {
+			invs[i] = exps[modn - 1 - logs[ i ] ];
+		}
+	} else {
+		logs[1] = 1;
+		invs[1] = 1;
+		exps.push_back( 1 );
 	}
+	std::cout << logs[0] << "\n";
+	std::cout << logs[1] << "\n";
 }
 
-#define omulc(d) (o[k+d] != 0 ? exps[o[k+d] + lc] : 0)
+#define omulc(d) ( o[k+d] != 0 ? exps[o[k+d] + lc] : 0)
 
 #if PGBC_USE_SSE == 1
 void CoeffField::mulSub(coeffRow& t, coeffRow& o, coeffType c, size_t prefix, size_t suffix) const {

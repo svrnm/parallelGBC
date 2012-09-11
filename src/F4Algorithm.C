@@ -127,31 +127,31 @@ void F4::updatePairs(vector<Polynomial>& polys)
 	updateTime += seconds() - timer;
 }
 
-void F4::gauss(coeffMatrix& matrix, size_t upper, vector<bool>& empty)
+void F4::gauss()
 {
 	for(size_t i = 1; i < upper; i+=2)
 	{
 		size_t p = 0;
 		bool found = false;
 		coeffType factor = 0;
-		for(p = 0; !found && p < matrix[i].size(); p++) {
-			found = matrix[i][p] != 0;
-			factor = matrix[i][p];
+		for(p = 0; !found && p < rs[i].size(); p++) {
+			found = rs[i][p] != 0;
+			factor = rs[i][p];
 		}
 		p--;
 		empty[i] = !found;
 		if(found) {
-			coeffRow logRow(matrix[i].size(), 0);
+			coeffRow logRow(rs[i].size(), 0);
 			// Normalize
 			if(factor != 1) {
 				factor = field->inv(factor);
-				for(size_t j = p; j < matrix[i].size(); j++) {
-					matrix[i][j] = field->mul(matrix[i][j], factor);
-					logRow[j] = field->getFactor(matrix[i][j]);
+				for(size_t j = p; j < rs[i].size(); j++) {
+					rs[i][j] = field->mul(rs[i][j], factor);
+					logRow[j] = field->getFactor(rs[i][j]);
 				}
 			} else {
-				for(size_t j = p; j < matrix[i].size(); j++) {
-					logRow[j] = field->getFactor(matrix[i][j]);
+				for(size_t j = p; j < rs[i].size(); j++) {
+					logRow[j] = field->getFactor(rs[i][j]);
 				}
 			}
 			// Execute
@@ -159,16 +159,16 @@ void F4::gauss(coeffMatrix& matrix, size_t upper, vector<bool>& empty)
 			for(size_t j = 2; j < upper; j+=2)
 			{
 				size_t k = (i+j)%upper;
-				coeffRow temp(matrix[k].size(), 0);
-				if(matrix[k][p] != 0) {
-					/*coeffType factor = field->getFactor(matrix[k][p]);
-						for(size_t m = p; m < matrix[k].size(); m++)
+				coeffRow temp(rs[k].size(), 0);
+				if(rs[k][p] != 0) {
+					/*coeffType factor = field->getFactor(rs[k][p]);
+						for(size_t m = p; m < rs[k].size(); m++)
 						{
 					// This is mulSub for primitives not vectors !
-					temp[m] = field->mulSub(matrix[k][m], matrix[i][m], factor);
+					temp[m] = field->mulSub(rs[k][m], rs[i][m], factor);
 					}*/
 					size_t prefix = (p/field->pad)*field->pad;
-					field->mulSub(matrix[k], logRow, matrix[k][p], prefix, matrix[k].size());
+					field->mulSub(rs[k], logRow, rs[k][p], prefix, rs[k].size());
 				}
 			}
 		}
@@ -177,7 +177,7 @@ void F4::gauss(coeffMatrix& matrix, size_t upper, vector<bool>& empty)
 }
 
 
-void F4::pReduceRange(size_t i, size_t upper, tbb::blocked_range<size_t>& range) {
+void F4::pReduceRange(size_t i, tbb::blocked_range<size_t>& range) {
 	for(size_t j = range.begin(); j < range.end(); j++)
 	{
 		size_t target = ops[i].targets[j];
@@ -196,7 +196,7 @@ void F4::pReduceRange(size_t i, size_t upper, tbb::blocked_range<size_t>& range)
 	}
 }
 
-void F4::pReduce(size_t upper)
+void F4::pReduce()
 {
 
 	prefixes.assign(rs.size(), 0);
@@ -219,7 +219,7 @@ void F4::pReduce(size_t upper)
 	}
 
 	for(size_t i = 0; i < ops.size(); i++) {
-		tbb::parallel_for(blocked_range<size_t>(0, ops[i].size()), F4PReduceRange(*this, i, upper));
+		tbb::parallel_for(blocked_range<size_t>(0, ops[i].size()), F4PReduceRange(*this, i));
 	}
 }
 
@@ -277,15 +277,14 @@ void F4::setupDenseRow(tbb::blocked_range<size_t>& range)
 			}
 			k++;
 		}
+		rightSide[i].clear();
 	}
 }
 
-size_t F4::prepare(vector<Polynomial>& polys, set<Term, Term::comparator>& terms)
+void F4::prepare(vector<Polynomial>& polys)
 {
 	double timer = seconds();
-	double timer2 = seconds();
 	// SELECTION
-	Term::comparator tog(O, true);
 	vector<F4Pair> tmp(pairs.begin(), pairs.end());
 	sort(tmp.begin(), tmp.end(), F4Pair::sugarComparator());
 	currentDegree = tmp.begin()->sugar;
@@ -305,12 +304,10 @@ size_t F4::prepare(vector<Polynomial>& polys, set<Term, Term::comparator>& terms
 	tmp.clear();
 	// SELECTION END
 
-	size_t upper = 2*index;
+	upper = 2*index;
 	rightSide.assign(rows.size(), tbb::concurrent_vector<Monomial>() );
 
 	//double testtimer = 0;
-	cout << "SELECT:\t" << (seconds() - timer2) << "\n";
-	timer2 = seconds();
 	for(size_t i = 0; i < rows.size(); i++) 
 	{
 		Polynomial& current = groebnerBasis[ rows[i].first ];
@@ -321,8 +318,6 @@ size_t F4::prepare(vector<Polynomial>& polys, set<Term, Term::comparator>& terms
 	}
 	// Clear unneeded data structures.
 	rows.clear();
-	cout << "SETUP1:\t" << (seconds() - timer2) << "\n";
-	timer2 = seconds();
 
 	terms.insert(termsUnordered.begin(), termsUnordered.end());
 	termsUnordered.clear();
@@ -333,21 +328,28 @@ size_t F4::prepare(vector<Polynomial>& polys, set<Term, Term::comparator>& terms
 	tbb::parallel_for(blocked_range<size_t>(0, rightSide.size()), F4SetupDenseRow(*this));
 
 	rightSide.clear();
-	cout << "SETUP2:\t" << (seconds() - timer2) << "\n";
-	timer2 = seconds();
+	
 
 
 	if(verbosity & 64) {
 		*out << "Matrix (r x c):\t" << rs.size() << " x " << terms.size() << "+" << pivots.size() << "\n";
+		size_t mSize = 0;
+		for(size_t i = 0; i < rs.size(); i++) {
+			for(size_t j = 0; j < rs[i].size(); j++) {
+				mSize += sizeof(coeffType); 
+			}
+		}
+		*out << "Matrix size:\t" << mSize << "\n";
 	}
 
-	map<Term, vector<pair<size_t, coeffType> >, Term::comparator> pivotOpsOrdered(pivotOps.begin(), pivotOps.end(), tog);
+	pivotOpsOrdered.insert(pivotOps.begin(), pivotOps.end());
 	pivotOps.clear();
 	ops.push_back( F4Operations() );
 	deps.assign(rs.size(), 0);
 
 #if 1 
 	vector<size_t> l(rs.size(),0);
+	//size_t oCount = 0;
 	for(map<Term, vector<pair<size_t, coeffType> >, Term::comparator>::reverse_iterator it = pivotOpsOrdered.rbegin(); it != pivotOpsOrdered.rend(); it++)
 	{
 		size_t o = pivots[it->first];
@@ -358,6 +360,7 @@ size_t F4::prepare(vector<Polynomial>& polys, set<Term, Term::comparator>& terms
 				l[t] = l[o];
 			}
 			ops[ l[t] ].push_back( t,o,it->second[i].second );
+			//oCount++;
 			deps[t]++; // target t has deps[t] operations do be done before it can be used as operator
 			l[t]++; // one operation per level, attention this also affects the following if-statements
 
@@ -366,6 +369,7 @@ size_t F4::prepare(vector<Polynomial>& polys, set<Term, Term::comparator>& terms
 			}
 		}
 	}
+	//*out << "Operations:\t" << oCount << "\n";
 #else
 	size_t l = 0;
 	for(map<Term, vector<pair<size_t, coeffType> >, Term::comparator>::reverse_iterator it = pivotOpsOrdered.rbegin(); it != pivotOpsOrdered.rend(); it++)
@@ -386,26 +390,21 @@ size_t F4::prepare(vector<Polynomial>& polys, set<Term, Term::comparator>& terms
 	prepareTime += seconds() - timer;
 	//*out << "Operations:\t" << ops.size() << "\n";
 	//*out << "Preparation:\t" << seconds() - timer << "\n";
-	cout << "SETUP3:\t" << (seconds() - timer2) << "\n";
-	cout << "Prep.:\t" << seconds() - timer << "\n";
-	return upper;
 }
 
 void F4::reduce(vector<Polynomial>& polys)
 {
-	mem();
-	size_t upper = prepare(polys, terms);
-	mem();
+	prepare(polys);
 
 	// ELIMINATE
 	double timer = seconds();
-	pReduce(upper);
+	pReduce();
 	ops.clear();
 	//timer = seconds();
 
-	vector<bool> empty(upper, false); // too large, FIX?
+	empty.assign(upper, false); // too large, FIX?
 	//double gt = seconds();	
-	gauss(rs, upper, empty);
+	gauss();
 	//*out << "----\nGauss (s):\t" << seconds()-gt << "\n";
 	// ELIMINATE END
 	reductionTime += seconds()-timer;
@@ -445,6 +444,7 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 
 	pairs = F4PairSet( F4Pair::comparator(O) );
 	terms = set<Term, Term::comparator>( Term::comparator(O, true) );
+	pivotOpsOrdered = map<Term, vector<pair<size_t, coeffType> >, Term::comparator>( Term::comparator(O, true) );
 
 	updateTime = 0;
 	prepareTime = 0;

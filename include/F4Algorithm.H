@@ -113,6 +113,7 @@ namespace parallelGBC {
 			tbb::concurrent_vector<std::pair<size_t, Term> > rows;
 			tbb::concurrent_unordered_map<Term, size_t, std::hash<Term> > pivots;
 			tbb::concurrent_unordered_map<Term, std::vector<std::pair<size_t, coeffType> >, std::hash<Term> > pivotOps;
+			std::map<Term, std::vector<std::pair<size_t, coeffType> >, Term::comparator> pivotOpsOrdered;
 			tbb::concurrent_unordered_set<Term, std::hash<Term> > termsUnordered;
 			tbb::concurrent_vector<tbb::concurrent_vector<Monomial> > rightSide;
 			std::vector<F4Operations > ops;
@@ -122,6 +123,9 @@ namespace parallelGBC {
 			std::vector<size_t> prefixes;
 			std::vector<size_t> suffixes;
 
+			size_t upper;
+
+			std::vector<bool> empty;
 
 			/* Verbosity, which can be changed during runtime, nothing which should
 			 * influence performance.
@@ -144,15 +148,15 @@ namespace parallelGBC {
 			double updateTime;
 
 			// Helper functions for groebner bases computation
-			void gauss(coeffMatrix& matrix, size_t upper, std::vector<bool>& empty);
-			void pReduce(size_t upper);
-			size_t prepare(std::vector<Polynomial>& polys, std::set<Term, Term::comparator>& terms);
+			void gauss();
+			void pReduce();
+			void prepare(std::vector<Polynomial>& polys);
 			void reduce(std::vector<Polynomial>& polys);
 			void updatePairs(std::vector<Polynomial>& polys);
 
 			void setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<size_t>& range);
 			void setupDenseRow(tbb::blocked_range<size_t>& range);
-			void pReduceRange(size_t i, size_t upper, tbb::blocked_range<size_t>& range);
+			void pReduceRange(size_t i, tbb::blocked_range<size_t>& range);
 
 
 			// Call this operator to compute the groebner basis of "generators"
@@ -189,13 +193,12 @@ namespace parallelGBC {
 	{
 		F4& f4;
 		size_t i;
-		size_t upper;
 
-		F4PReduceRange(F4& f4, size_t i, size_t upper) : f4(f4), i(i), upper(upper) {}
+		F4PReduceRange(F4& f4, size_t i) : f4(f4), i(i) {}
 
 		void operator() (tbb::blocked_range<size_t>& range) const
 		{
-			f4.pReduceRange(i, upper, range);
+			f4.pReduceRange(i, range);
 		}
 	};
 

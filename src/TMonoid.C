@@ -52,7 +52,6 @@ size_t TMonoid::TermInstanceHash::operator()(const TermInstance* const t) const 
 } 
 
 TMonoid::~TMonoid() {
-
 	for(TermInstanceSet::iterator it = terms.begin(); it != terms.end(); it++) { 
 		delete *it; 
 	}

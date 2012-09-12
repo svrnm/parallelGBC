@@ -54,8 +54,6 @@ CoeffField::CoeffField(coeffType modn) : modn(modn)
 		invs[1] = 1;
 		exps.push_back( 1 );
 	}
-	std::cout << logs[0] << "\n";
-	std::cout << logs[1] << "\n";
 }
 
 #define omulc(d) ( o[k+d] != 0 ? exps[o[k+d] + lc] : 0)

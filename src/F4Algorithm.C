@@ -221,6 +221,16 @@ void F4::pReduce()
 	for(size_t i = 0; i < ops.size(); i++) {
 		tbb::parallel_for(blocked_range<size_t>(0, ops[i].size()), F4PReduceRange(*this, i));
 	}
+
+	size_t nnz = 0;
+	for(size_t i = 0; i < rs.size(); i++) {
+		for(size_t j = 0; j < rs[i].size(); j++) {
+				if(rs[i][j] != 0) {
+					nnz++;
+				}
+		}
+	}
+	cout << nnz << "/" << (rs.size() * rs[0].size()) << "\n";
 }
 
 void F4::setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<size_t>& range) 
@@ -319,11 +329,22 @@ void F4::prepare(vector<Polynomial>& polys)
 	// Clear unneeded data structures.
 	rows.clear();
 
+	//pivotOps.clear();
+	pivotsOrdered.insert(pivots.begin(), pivots.end());
+	pivots.clear();
+
 	terms.insert(termsUnordered.begin(), termsUnordered.end());
 	termsUnordered.clear();
 
 	size_t pad = field->pad;
 	rs.assign(rightSide.size(), coeffRow( (( terms.size()+pad-1 )/ pad ) * pad, 0) );
+
+	size_t nnz = 0;
+	for(size_t i = 0; i < rightSide.size(); i++) {
+		nnz += rightSide[i].size();
+	}
+	cout << nnz << "/" << rs.size() * rs[0].size() << "\n";
+
 
 	tbb::parallel_for(blocked_range<size_t>(0, rightSide.size()), F4SetupDenseRow(*this));
 
@@ -342,24 +363,23 @@ void F4::prepare(vector<Polynomial>& polys)
 		*out << "Matrix size:\t" << mSize << "\n";
 	}
 
-	pivotOpsOrdered.insert(pivotOps.begin(), pivotOps.end());
-	pivotOps.clear();
 	ops.push_back( F4Operations() );
 	deps.assign(rs.size(), 0);
 
 #if 1 
 	vector<size_t> l(rs.size(),0);
 	//size_t oCount = 0;
-	for(map<Term, vector<pair<size_t, coeffType> >, Term::comparator>::reverse_iterator it = pivotOpsOrdered.rbegin(); it != pivotOpsOrdered.rend(); it++)
+	for(map<Term, uint32_t, Term::comparator>::reverse_iterator it = pivotsOrdered.rbegin(); it != pivotsOrdered.rend(); it++) 
 	{
-		size_t o = pivots[it->first];
-		for(size_t i = 0; i < it->second.size(); i++)
+		uint32_t o = it->second;
+		vector<pair<uint32_t, coeffType> > entries = pivotOps[it->first];
+		for(size_t i = 0; i < entries.size(); i++)
 		{
-			size_t t = it->second[i].first;
+			uint32_t t = entries[i].first;
 			if(l[ o ] > l[t]) {
 				l[t] = l[o];
 			}
-			ops[ l[t] ].push_back( t,o,it->second[i].second );
+			ops[ l[t] ].push_back( t,o,entries[i].second );
 			//oCount++;
 			deps[t]++; // target t has deps[t] operations do be done before it can be used as operator
 			l[t]++; // one operation per level, attention this also affects the following if-statements
@@ -369,8 +389,8 @@ void F4::prepare(vector<Polynomial>& polys)
 			}
 		}
 	}
-	//*out << "Operations:\t" << oCount << "\n";
 #else
+	// TODO: Fix, since pivotOpsOrdered has been removes.
 	size_t l = 0;
 	for(map<Term, vector<pair<size_t, coeffType> >, Term::comparator>::reverse_iterator it = pivotOpsOrdered.rbegin(); it != pivotOpsOrdered.rend(); it++)
 	{
@@ -384,8 +404,8 @@ void F4::prepare(vector<Polynomial>& polys)
 		ops.push_back( F4Operations() );
 	}
 #endif
-	pivots.clear();
-	pivotOpsOrdered.clear();
+	pivotOps.clear();
+	pivotsOrdered.clear();
 	ops.pop_back();
 	prepareTime += seconds() - timer;
 	//*out << "Operations:\t" << ops.size() << "\n";
@@ -444,7 +464,7 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 
 	pairs = F4PairSet( F4Pair::comparator(O) );
 	terms = set<Term, Term::comparator>( Term::comparator(O, true) );
-	pivotOpsOrdered = map<Term, vector<pair<size_t, coeffType> >, Term::comparator>( Term::comparator(O, true) );
+	pivotsOrdered = map<Term, uint32_t, Term::comparator>( Term::comparator(O, true) );
 
 	updateTime = 0;
 	prepareTime = 0;

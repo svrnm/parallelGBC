@@ -20,54 +20,6 @@
 
 using namespace std;
 
-long long parseLine(char* line)
-{
-	long long i = strlen(line);
-	while (*line < '0' || *line > '9') line++;
-	line[i-3] = '\0';
-	i = atoll(line);
-	return i;
-}
-
-int getProcessVirtualMem(){ //Note: this value is in KB!
-	FILE* file = fopen("/proc/self/status", "r");
-	long long result = -1;
-	char line[128];
-
-
-	while (fgets(line, 128, file) != NULL){
-		if (strncmp(line, "VmSize:", 7) == 0) {
-			result = parseLine(line);
-			break;	
-		}
-	}
-	fclose(file);
-	return result;
-}
-
-
-void mem() 
-{
-	/*struct sysinfo memInfo;
-	sysinfo(&memInfo);
-	long long totalVirtualMem = memInfo.totalram;
-	totalVirtualMem += memInfo.totalswap;
-	totalVirtualMem *= memInfo.mem_unit;
-
-	long long virtualMemUsed = memInfo.totalram - memInfo.freeram;
-	virtualMemUsed += memInfo.totalswap - memInfo.freeswap;
-	virtualMemUsed *= memInfo.mem_unit;*/
-
-	long long virtualMemProc = getProcessVirtualMem();
-
-	//cout << virtualMemProc << "/" << virtualMemUsed << "/" << totalVirtualMem << "\n";
-	
-	cout << virtualMemProc << " KB\n";
-	
-}
-
-
-
 void printPolyMatrix(vector<Polynomial>& v, const TOrdering* O)
 {
 

@@ -111,9 +111,9 @@ namespace parallelGBC {
 			std::set<Term, Term::comparator> terms;
 
 			tbb::concurrent_vector<std::pair<size_t, Term> > rows;
-			tbb::concurrent_unordered_map<Term, size_t, std::hash<Term> > pivots;
-			tbb::concurrent_unordered_map<Term, std::vector<std::pair<size_t, coeffType> >, std::hash<Term> > pivotOps;
-			std::map<Term, std::vector<std::pair<size_t, coeffType> >, Term::comparator> pivotOpsOrdered;
+			tbb::concurrent_unordered_map<Term, uint32_t, std::hash<Term> > pivots;
+			std::map<Term, uint32_t, Term::comparator> pivotsOrdered;
+			tbb::concurrent_unordered_map<Term, std::vector<std::pair<uint32_t, coeffType> >, std::hash<Term> > pivotOps;
 			tbb::concurrent_unordered_set<Term, std::hash<Term> > termsUnordered;
 			tbb::concurrent_vector<tbb::concurrent_vector<Monomial> > rightSide;
 			std::vector<F4Operations > ops;

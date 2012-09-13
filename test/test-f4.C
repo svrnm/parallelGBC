@@ -82,7 +82,6 @@ int main(int argc, char* argv[]) {
 	boost::sregex_token_iterator end;
 
 	for(; iter != end; ++iter) {
-	//for(size_t i = 0; i < numbers.size(); i++) {
 		istringstream ( iter->str() ) >> val;
 		if( val > max ) max = val;
 	}
@@ -105,19 +104,20 @@ int main(int argc, char* argv[]) {
 	// to normalize your polynomials. Remark: This step will be merged into f4(...) in a later release,
 	// doing everything twice shouldn't harm.
 	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::order), _1, o));
-	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::bringIn), _1, cf, false));
 
 	// Create the f4 computer.
 	F4 f4;
 	// Compute the groebner basis for the polynomials in 'list' with 'threads' threads/processors 
-	for(size_t i = 0; i < list.size(); i++) {
-			if(i > 0) {
-				cout << ", ";
-			}
-			cout << list[i];
+	/*for(size_t i = 0; i < list.size(); i++) {
+		if(i > 0) {
+			cout << ", ";
 		}
-		cout << "\n";
+		cout << list[i];
+	}
+	cout << "\n";
+*/
 
+	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::bringIn), _1, cf, false));
 	
 	vector<Polynomial> result = f4(list, o, cf, threads, verbosity);
 	// Return the size of the groebner basis

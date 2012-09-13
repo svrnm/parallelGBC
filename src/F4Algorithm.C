@@ -221,16 +221,6 @@ void F4::pReduce()
 	for(size_t i = 0; i < ops.size(); i++) {
 		tbb::parallel_for(blocked_range<size_t>(0, ops[i].size()), F4PReduceRange(*this, i));
 	}
-
-	size_t nnz = 0;
-	for(size_t i = 0; i < rs.size(); i++) {
-		for(size_t j = 0; j < rs[i].size(); j++) {
-				if(rs[i][j] != 0) {
-					nnz++;
-				}
-		}
-	}
-	cout << nnz << "/" << (rs.size() * rs[0].size()) << "\n";
 }
 
 void F4::setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<size_t>& range) 
@@ -336,38 +326,15 @@ void F4::prepare(vector<Polynomial>& polys)
 	terms.insert(termsUnordered.begin(), termsUnordered.end());
 	termsUnordered.clear();
 
-	size_t pad = field->pad;
-	rs.assign(rightSide.size(), coeffRow( (( terms.size()+pad-1 )/ pad ) * pad, 0) );
-
-	size_t nnz = 0;
-	for(size_t i = 0; i < rightSide.size(); i++) {
-		nnz += rightSide[i].size();
-	}
-	cout << nnz << "/" << rs.size() * rs[0].size() << "\n";
-
-
-	tbb::parallel_for(blocked_range<size_t>(0, rightSide.size()), F4SetupDenseRow(*this));
-
-	rightSide.clear();
-	
-
-
-	if(verbosity & 64) {
-		*out << "Matrix (r x c):\t" << rs.size() << " x " << terms.size() << "+" << pivots.size() << "\n";
-		size_t mSize = 0;
-		for(size_t i = 0; i < rs.size(); i++) {
-			for(size_t j = 0; j < rs[i].size(); j++) {
-				mSize += sizeof(coeffType); 
-			}
-		}
-		*out << "Matrix size:\t" << mSize << "\n";
+		if(verbosity & 64) {
+		*out << "Matrix (r x c):\t" << rightSide.size() << " x " << terms.size() << "+" << pivotsOrdered.size() << "\n";
 	}
 
 	ops.push_back( F4Operations() );
-	deps.assign(rs.size(), 0);
+	deps.assign(rightSide.size(), 0);
 
 #if 1 
-	vector<size_t> l(rs.size(),0);
+	vector<size_t> l(rightSide.size(),0);
 	//size_t oCount = 0;
 	for(map<Term, uint32_t, Term::comparator>::reverse_iterator it = pivotsOrdered.rbegin(); it != pivotsOrdered.rend(); it++) 
 	{
@@ -407,6 +374,14 @@ void F4::prepare(vector<Polynomial>& polys)
 	pivotOps.clear();
 	pivotsOrdered.clear();
 	ops.pop_back();
+	
+	size_t pad = field->pad;
+	rs.assign(rightSide.size(), coeffRow( (( terms.size()+pad-1 )/ pad ) * pad, 0) );
+	tbb::parallel_for(blocked_range<size_t>(0, rightSide.size()), F4SetupDenseRow(*this));
+	rightSide.clear();
+
+
+	
 	prepareTime += seconds() - timer;
 	//*out << "Operations:\t" << ops.size() << "\n";
 	//*out << "Preparation:\t" << seconds() - timer << "\n";

@@ -1,4 +1,4 @@
-Parallel Groebner Basis Computation (alpha 0.1)
+Parallel Groebner Basis Computation (beta 0.5)
 
 LICENSE
 This program is free software; see LICENSE.TXT for more details
@@ -34,10 +34,15 @@ contact the author
 
 TESTING
 Compute the degree reverse lexicogrpahic gröbner basis of cyclic-8 with 4 threads
-and a lot of verbosity
+and a lot of verbosity and without printing the groebner basis.
 
 cd test/;
-./test/test-f4 ../input/cyclic8.txt 4 127
+./test/test-f4 ../input/cyclic8.txt 4 127 0
+
+CHECKING FUNCTIONALITY
+The folder gb/ contains precomputed groebner bases over F_{32003} using degree reverse
+lexicographic term ordering (computed using ApCoCoA). Use 'make check'
+to validate the functionality of parallelGBC.
 
 VERBOSITY
 Verbosity, which can be changed during runtime, nothing which should
@@ -58,3 +63,5 @@ If you want to use the code for your own project see test/test-f4.C as example
 
 CONTACT
 For any questions you can contact Severin Neumann <severin.neumann@computer.org>
+
+

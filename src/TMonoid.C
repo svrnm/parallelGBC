@@ -35,6 +35,9 @@ TMonoid::TMonoid(size_t N) : /*tls(N),*/ N(N), D(64/N) {
 	one->setDegree();
 	//terms.insert( one );
 	createElement( one );
+
+	lexOrdering = new LexOrdering(N);
+	degLexOrdering = new DegLexOrdering(N);
 }
 
 
@@ -55,6 +58,7 @@ TMonoid::~TMonoid() {
 	for(TermInstanceSet::iterator it = terms.begin(); it != terms.end(); it++) { 
 		delete *it; 
 	}
+	delete lexOrdering;
 }
 
 const TermInstance* TMonoid::createElement(TermInstance* t)
@@ -100,4 +104,12 @@ const TermInstance* TMonoid::createElement(const string& s, degreeType min) {
 		}
 	}
 	return createElement(new TermInstance(this, v));
+}
+
+TOrdering* TMonoid::lex() {
+	return this->lexOrdering;
+}
+
+TOrdering* TMonoid::degLex() {
+	return this->degLexOrdering;
 }

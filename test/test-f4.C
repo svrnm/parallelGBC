@@ -104,6 +104,7 @@ int main(int argc, char* argv[]) {
 	// to normalize your polynomials. Remark: This step will be merged into f4(...) in a later release,
 	// doing everything twice shouldn't harm.
 	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::order), _1, o));
+	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::bringIn), _1, cf, false));
 
 	// Create the f4 computer.
 	F4 f4;
@@ -115,9 +116,8 @@ int main(int argc, char* argv[]) {
 		cout << list[i];
 	}
 	cout << "\n";
-*/
+	*/
 
-	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::bringIn), _1, cf, false));
 	
 	vector<Polynomial> result = f4(list, o, cf, threads, verbosity);
 	// Return the size of the groebner basis

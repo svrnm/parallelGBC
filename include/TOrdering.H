@@ -44,4 +44,12 @@ class LexOrdering : public TOrdering
 	virtual int cmp(const Term&, const Term& b) const;
 	virtual std::string name() const { return "Lex"; }
 };
+
+class DegLexOrdering : public TOrdering
+{
+	public:
+	DegLexOrdering(size_t N) : TOrdering(N) {}
+	virtual int cmp(const Term&, const Term& b) const;
+	virtual std::string name() const { return "DegLex"; }
+};
 #endif

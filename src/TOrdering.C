@@ -47,3 +47,18 @@
 	}
 	return 0;
   }
+
+	int DegLexOrdering::cmp(const Term& a, const Term& b) const
+	{
+		if(a == b) return 0;
+		if(a.deg() == b.deg()) 
+		{
+			for(long i = 0; i < N; i++) {
+				degreeType r = a[i] - b[i];
+				if(r != 0) {
+					return r < 0 ? -1 : 1;
+				}
+			}
+		}
+		return a.deg() < b.deg() ? -1 : 1;
+	}

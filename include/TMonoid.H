@@ -37,6 +37,7 @@
 #endif
 
 class TermInstance;
+class TOrdering;
 
 class TMonoid {
 	protected:
@@ -57,11 +58,16 @@ class TMonoid {
 	public:
 		const size_t N;
 		const size_t D;
+		TOrdering* lexOrdering;
+		TOrdering* degLexOrdering;
 		TMonoid(size_t N);
 
 		const TermInstance* createElement(const std::string& s, degreeType min);
 		const TermInstance* createElement(const std::vector<degreeType>& v);
 		const TermInstance* createElement(TermInstance* t);
+		TOrdering* lex();
+		TOrdering* degLex();
+		
 
 		size_t size() const {
 			return terms.size();

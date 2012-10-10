@@ -45,7 +45,6 @@ void F4::updatePairs(vector<Polynomial>& polys)
 			}
 		}
 
-
 		if(insertIntoG)
 		{   
 			// Cancel in P all pairs (i,j) which satisfy T(i,j) = T(i,j,t), T(i,t) != T(i,j) != T(j,t) [ B_t(i,j) ]
@@ -54,7 +53,7 @@ void F4::updatePairs(vector<Polynomial>& polys)
 			{
 				if( !it->LCM.isDivisibleBy(h.LT())  || h.lcmLT(groebnerBasis[it->i]) == it->LCM  ||  h.lcmLT(groebnerBasis[it->j]) == it->LCM  ) { 
 					P1.insert( *it );
-				}   
+				}
 			}   
 			swap(pairs, P1);
 
@@ -84,15 +83,14 @@ void F4::updatePairs(vector<Polynomial>& polys)
 			}
 
 			// In each nonvoid subset { (j,t) | T(j,t) = tau } ...
-			F4PairSet P2(pairs.key_comp());
+			set<F4Pair, F4Pair::comparator> P2(pairs.key_comp());
 			for(size_t i = 0; i < D1.size(); i++)
 			{
 				if(D1[i])
 				{
 					Term LCM = groebnerBasis[i].lcmLT(h);
 					F4Pair newpair( LCM, i, t, LCM == groebnerBasis[i].LT().mul(h.LT()), max(groebnerBasis[i].sugar() - groebnerBasis[i].LT().deg(), h.sugar() - h.LT().deg()) + LCM.deg() );
-					pair<set<F4Pair>::iterator,bool> ret;
-					// TODO: Efficient ...
+					pair<F4PairSet::iterator,bool> ret;
 					ret = P2.insert( newpair );
 					if(newpair.marked && ret.second)
 					{
@@ -103,7 +101,7 @@ void F4::updatePairs(vector<Polynomial>& polys)
 			}
 
 			// Finally delete all (i,t) with T(i)T(j) = T(i,t).
-			for(set<F4Pair>::iterator it = P2.begin(); it != P2.end(); it++)
+			for(set<F4Pair, F4Pair::comparator>::iterator it = P2.begin(); it != P2.end(); it++)
 			{   
 				if(!it->marked)
 				{ 
@@ -461,6 +459,7 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 			updatePairs(polys);
 		}
 	}
+
 	if(verbosity & 2) {
 		*out << "Reduction (s): \t" << reductionTime << "\n";
 	}

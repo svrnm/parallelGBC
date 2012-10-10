@@ -111,6 +111,10 @@ class Polynomial {
 			terms.push_back(t);
 		}
 
+		std::vector<Term> support() {
+			return terms;
+		}
+
 		struct comparator {
 			const TOrdering* O;
 			bool gt; // if greater

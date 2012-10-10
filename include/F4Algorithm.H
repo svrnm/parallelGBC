@@ -92,7 +92,7 @@ namespace parallelGBC {
 	};
 
 
-	typedef std::set<F4Pair,F4Pair::comparator> F4PairSet;
+	typedef std::multiset<F4Pair,F4Pair::comparator> F4PairSet;
 
 
 	class F4 {

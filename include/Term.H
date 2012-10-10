@@ -17,7 +17,7 @@
 #ifndef TERM_H
 #define TERM_H
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 #include "TMonoid.H"
 #include "TOrdering.H"
 #include <iostream>
@@ -128,6 +128,17 @@ class TermInstance {
 			return owner->createElement(new TermInstance(owner, indets, other->indets));
 		}
 
+		const TermInstance* mulX(size_t i) const {
+			TermInstance* result = new TermInstance(owner);
+			for(size_t j = 0; j < owner->N; j++) {
+				result->indets[j] = indets[j];
+			}
+			result->indets[i]++;
+			result->setDegree();
+			result->setHash();
+			return owner->createElement(result);
+		}
+
 		const TermInstance* lcm(const TermInstance* other) const;
 
 		const TermInstance* div(const TermInstance* other) const {
@@ -147,6 +158,7 @@ class TermInstance {
 			return true;
 		}
 
+		std::string str() const;
 
 		friend class TMonoid;
 };
@@ -178,6 +190,10 @@ class Term {
 
 		Term mul(const Term& other) const {
 			return Term(instance->monoid(), instance->mul(other.instance));
+		}
+
+		Term mulX(size_t i) const {
+			return Term(instance->monoid(), instance->mulX(i));
 		}
 
 		Term lcm(const Term& other) const {
@@ -214,6 +230,7 @@ class Term {
 				bool gt; // if greater
 
 				comparator() : O(NULL), gt(false) {}
+				comparator(TMonoid* M, bool gt = false) : O(M->lex()), gt(gt) {}
 				comparator(const TOrdering* O, bool gt = false) : O(O), gt(gt) {}
 
 				bool operator() (const Term& lhs, const Term& rhs) const
@@ -224,6 +241,10 @@ class Term {
 
 		size_t hash() const {
 			return instance->getHash();
+		}
+
+		std::string str() const {
+			return instance->str();
 		}
 
 		std::vector<degreeType> getValues() {

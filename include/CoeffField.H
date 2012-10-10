@@ -105,6 +105,11 @@ class CoeffField
 			return exps[logs[a] + logs[b]];
 		}
 
+		coeffType div(coeffType a, coeffType b) const
+		{
+			return mul(a, inv(b));
+		}
+
 		coeffType bringIn(coeffType a) const
 		{
 			return ((a % modn) + modn) % modn;

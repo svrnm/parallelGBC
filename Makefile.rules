@@ -1,6 +1,9 @@
-# Makefile.rules for parallelGBC 0.2 and later
+#
+# Makefile.rules for parallelGBC 0.5 and later
 #  
 # With this file you can configure the compilation of the tool.
+#
+######################
 #
 # This file is part of parallelGBC, a parallel groebner basis computation tool.
 #
@@ -21,14 +24,15 @@
 CXX = /usr/bin/g++
 
 # Configure CXXFLAGS. 
-# COEFF_BITS defines the length of the coefficents. If you need fields larger than 32003,
-# you have to use 32 oder 64.
+# COEFF_BITS defines the length of the coefficents. If you need large coefficient fields
+# you should choose 32. If you want to get the most performance, you can choose 8. But
+# for most cases the default value of 16 should do it.
 # PGBC_USE_SSE1 enables sse optimizations in the field arithmetics (currently requires GCC)
 # 
 # the following CXXFLAGS are for the GNU COMPILER:
-CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -D'PGBC_COEFF_BITS=16' -std=c++0x
+#CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -D'PGBC_COEFF_BITS=16' -std=c++0x
 # Possible FLAGS:
-#CXXFLAGS = -fPIC -Wall -fopenmp -O3 -march=native -pipe -D'PGBC_COEFF_BITS=16' -D'PGBC_USE_SSE=1' -std=c++0x
+CXXFLAGS = -fPIC -Wall -fopenmp -O3 -march=native -pipe -D'PGBC_COEFF_BITS=16' -D'PGBC_USE_SSE=1' -std=c++0x
 # DEBUG FLAGS:
 #CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -D'PGBC_COEFF_BITS=16' -D'PGBC_USE_SSE=1' -std=c++0x -g3 -pg -gdwarf-2
 

@@ -63,5 +63,3 @@ If you want to use the code for your own project see test/test-f4.C as example
 
 CONTACT
 For any questions you can contact Severin Neumann <severin.neumann@computer.org>
-
-

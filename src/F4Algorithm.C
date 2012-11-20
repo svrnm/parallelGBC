@@ -279,7 +279,7 @@ void F4::setupDenseRow(tbb::blocked_range<size_t>& range)
 	}
 }
 
-void F4::prepare(vector<Polynomial>& polys)
+void F4::prepare()
 {
 	double timer = seconds();
 	// SELECTION
@@ -387,7 +387,7 @@ void F4::prepare(vector<Polynomial>& polys)
 
 void F4::reduce(vector<Polynomial>& polys)
 {
-	prepare(polys);
+	prepare();
 
 	// ELIMINATE
 	double timer = seconds();

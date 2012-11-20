@@ -1,4 +1,14 @@
-/*
+/**
+ * This file includes the headers of 'TMonoid' which represents the monoid containing all instances
+ * of terms with a given number of indetermenants. The monoid is just a container object for the
+ * instances of terms. The monoid has a hash map, which stores for each Term a unique instance. 
+ * This makes it possible that a Term is only identified by a small amount of memory (the pointer
+ * to the instance) and comparision of equality is just a comparision of pointers. 
+ *
+ * The details of TermInstance* and Term are given in the header file include/Term.h
+ *
+ *******
+ *
  *  This file is part of parallelGBC, a parallel groebner basis computation tool.
  *
  *  parallelGBC is free software: you can redistribute it and/or modify

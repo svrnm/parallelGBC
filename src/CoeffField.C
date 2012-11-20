@@ -1,4 +1,4 @@
-/*
+/**
  *  This file is part of parallelGBC, a parallel groebner basis computation tool.
  *
  *  parallelGBC is free software: you can redistribute it and/or modify

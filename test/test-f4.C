@@ -1,4 +1,4 @@
-/*
+/**
  *  Example and test file for parallelGBC. To use it execute
  *
  *  	# ./test-f4 input.txt <NUM_OF_PROCS>
@@ -11,6 +11,8 @@
  *
  *  If you want to use the library for your own code, please look below for an 
  *  usage example!
+ *
+ ****************
  *
  *  This file is part of parallelGBC, a parallel groebner basis computation tool.
  *
@@ -95,7 +97,7 @@ int main(int argc, char* argv[]) {
 	// 2. Create a power product monoid for the terms. Pay attention that ordering and monoid match.
 	TMonoid m(max);
 	// 3. Create a coefficient field.
-	CoeffField* cf = new CoeffField(32003);
+	CoeffField* cf = new CoeffField(162007);
 	// 4. Read in the polynomials from string 't'. The second parameter is the power product monoid.
 	vector<Polynomial> list = Polynomial::createList(t, m);
 

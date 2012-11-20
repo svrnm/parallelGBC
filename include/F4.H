@@ -1,4 +1,9 @@
-/*
+/**
+ *  This file includes all headers of the parallelGBC project. To use the library it
+ *  should be enough to include this file.
+ *
+ ***********************
+ *
  *  This file is part of parallelGBC, a parallel groebner basis computation tool.
  *
  *  parallelGBC is free software: you can redistribute it and/or modify

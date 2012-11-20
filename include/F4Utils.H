@@ -1,4 +1,16 @@
-/*
+/**
+ *  Provides helper functions which are used for timings and debugging:
+ *
+ *  - seconds() can be used to measure the time of a function:
+ *		double s = seconds();
+ *		doSomething();
+ *		double time = seconds()-s;
+ *
+ *	- printPolyMatrix(...) writes a vector of polynomials as coefficient matrix to
+ *	the standard output.
+ *
+ ***************
+ *
  *  This file is part of parallelGBC, a parallel groebner basis computation tool.
  *
  *  parallelGBC is free software: you can redistribute it and/or modify
@@ -23,6 +35,9 @@
 #include <sys/sysinfo.h>
 #include "Polynomial.H"
 
+/**
+ * Return the current time stamp in seconds.
+ */
 inline double seconds()
 {    
 	struct timeval tv;
@@ -30,7 +45,9 @@ inline double seconds()
 	return (double)tv.tv_sec + ((double)tv.tv_usec)/1000000.0;
 }
 
-void mem();
-
+/**
+ * Print the given polynomials as coefficient matrix. The ordering defines
+ * the column position of a given term.
+ */
 void printPolyMatrix(std::vector<Polynomial>& v, const TOrdering* O);
 #endif

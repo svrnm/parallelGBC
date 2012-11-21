@@ -124,7 +124,7 @@ namespace parallelGBC {
 	};
 
 	/**
-	 * This class represents a container for matrix operations which have to be done sequentially. An Operation
+	 * This class represents a container for matrix operations which can be computed in parallel. An Operation
 	 * is a triple of a target row 't', an operator row 'o' and a coefficient 'f', which means that 'o' times 'f'
 	 * should be subtracted from 't'. 
 	 */
@@ -246,7 +246,8 @@ namespace parallelGBC {
 			tbb::concurrent_vector<tbb::concurrent_vector<Monomial> > rightSide;
 			/**
 			 * The list of operations which have to be executed. One 'F4Operations' represents a set of operations which
-			 * will be done sequentially
+			 * will be done parallel. No two elements of ops can be done in parallel, since there are dependencies or
+			 * blocking operations.
 			 */
 			std::vector<F4Operations > ops;
 			/**
@@ -343,17 +344,18 @@ namespace parallelGBC {
 			void updatePairs(std::vector<Polynomial>& polys);
 	
 			/**
-			 * 
+			 * Process a S-Polynomial (ir*current) and do the symbolic preprocessing by adding required
+			 * reduction polynomials to the matrix
 			 */
 			void setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<size_t>& range);
 
 			/**
-			 *
+			 * Convert the non pivot part of the matrix from sparse ('rightSide') to dense ('rs') representation
 			 */
 			void setupDenseRow(tbb::blocked_range<size_t>& range);
 
 			/**
-			 * 
+			 * Reduce a slice of the operation set ops[i] 
 			 */
 			void pReduceRange(size_t i, tbb::blocked_range<size_t>& range);
 
@@ -363,7 +365,6 @@ namespace parallelGBC {
 			 * The polynomials should already be brought into the coefficient field 'field'. The number of threads
 			 * is a upper bound for the parallelism and should be set to the number of available processor cores.
 			 * 'verbosity' and 'output' can be used for debugging and performance measurement.
-			 *
 			 */
 			std::vector<Polynomial> operator()(std::vector<Polynomial>& generators, const TOrdering* O, CoeffField* field, int threads = 1, int verbosity = 0, std::ostream& output = std::cout);
 	};
@@ -378,53 +379,87 @@ namespace parallelGBC {
 		 * The used instance of the F4 algorithm
 		 */
 		F4& f4;
+		
 		/**
-		 * the current Polynomial
+		 * the polynomial which will be used to compute the S-Polynomial (current*ir)
 		 */
 		Polynomial& current;
 		/**
-		 * 
+		 * the term which will be used to compute the S-polynomial (current*ir)
 		 */
+		
 		Term& ir;
 		/**
-		 *
+		 * The index of the current row of the coefficient matrix
 		 */
 		size_t i;
 
 		/**
-		 *
+		 * Construct a new instance of F4SetupRow.
 		 */
 		F4SetupRow(F4& f4, Polynomial& current, Term& ir, size_t i) : f4(f4), current(current), ir(ir), i(i) {}
 
+		/**
+		 * Call back the setupRow function of the given f4 instance.
+		 */
 		void operator() (tbb::blocked_range<size_t>& range) const
 		{
 			f4.setupRow(current, ir, i, range);
 		}
 	};
 
+	/**
+	 * Helper class for parallel matrix setup. Will be used by tb::parallel_for()
+	 * The operator() is just a callback for the setupDenseRow() function of the class f4
+	 */
 	struct F4SetupDenseRow {
+		/**
+		 * The used instance of the F4 algorithm
+		 */
 		F4& f4;
 
+		/**
+		 * Construct a new instance of F4SetupDenseRow
+		 */
 		F4SetupDenseRow(F4& f4) : f4(f4) {}
 
+		/**
+		 * Call back the setupDenseRow function of the given f4 instance
+		 */
 		void operator() (tbb::blocked_range<size_t>& range) const
 		{
 			f4.setupDenseRow(range);
 		}
 	};
 
+	/**
+	 * Helper class for parallel matrix reduction. Will be used by tbb:parallel_for()
+	 * The operator() is just a callback for the pReduceRange() function of the class f4
+	 */
 	struct F4PReduceRange
 	{
+		/**
+		 * The used instance of the F4 algorithm
+		 */
 		F4& f4;
+	
+		/**
+		 * The index for the current set of operations (f4.ops[i])
+		 */
 		size_t i;
 
+		/**
+		 * Construct a new instance of F4PReduceRange
+		 */
 		F4PReduceRange(F4& f4, size_t i) : f4(f4), i(i) {}
 
+		/**
+		 * Call back the pReduceRange function of the given f4 instance
+		 */
 		void operator() (tbb::blocked_range<size_t>& range) const
 		{
 			f4.pReduceRange(i, range);
 		}
 	};
-
 }
 #endif

@@ -296,6 +296,10 @@ class Polynomial {
  * Print a polynomial to a output stream
  */
 std::ostream& operator<< (std::ostream &out, const Polynomial &poly);
+/**
+ * Print a list of polynomials
+ */
+ostream& operator<< (ostream& out, const vector<Polynomial> &polys) 
 
 /**
  * A monomial comparator. The comparator compres the leading terms of two

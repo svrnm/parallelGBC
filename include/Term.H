@@ -1,4 +1,10 @@
-/*
+/**
+ * This file provides the classes 'TermInstance' and 'Term'. The class 'TermInstance' is
+ * only accessible via the class TMonoid (see include/TMonoid.H) or via the wrapper 'Term'.
+ * A term is represented as a vector of N elements, wehre N is the number of indeterminants.
+ *
+ ****
+ *
  *  This file is part of parallelGBC, a parallel groebner basis computation tool.
  *
  *  parallelGBC is free software: you can redistribute it and/or modify
@@ -22,6 +28,9 @@
 #include "TOrdering.H"
 #include <iostream>
 
+/**
+ * Forward declaration of the class Polynomial, see include/Polynomial.H
+ */
 class Polynomial;
 
 class TermInstance {
@@ -260,7 +269,7 @@ namespace std
    {
        size_t operator()(const Term& t) const
        {
-		return t.hash();
+					return t.hash();
        }
    };
 }

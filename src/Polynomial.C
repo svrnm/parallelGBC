@@ -26,22 +26,30 @@ using namespace std;
 ostream& operator<< (ostream &out, const Polynomial &poly) 
 {
 	bool first = true;
+	// The current polynomial is zero, print 0 and return.
 	if(poly.size() == 0) {
 		out << 0;
 		return out;
 	}
+	// Iterate over the monomials which are contained in poly.
+	// The monomials are printed in that order which has been
+	// applied to the polynomial. 
 	for(size_t i = 0; i < poly.size(); i++) 
 	{
 		std::pair<coeffType, Term> t = poly[i];
+		// Add a "+" to each polynomial, except the first
 		if(!first)
 		{
 			out << " + ";
 		}
 		first = false;
+		// Only print the name of the term, if it is not
+		// the term of degree zero (=1)
 		if(t.first != 1)
 		{
 			out << (int)t.first << "*";
 		}
+		// Print the coefficient.
 		out << t.second;
 	}
 	return out;
@@ -219,40 +227,6 @@ void Polynomial::order(const TOrdering* O) {
 		coeffs.push_back(ms[i].first);
 	}
 }
-
-/*void Polynomial::sub(const Polynomial& other, const TOrdering* O, const CoeffField* f) {
-  vector<Monomial>::iterator m1 = monomials.begin();
-  vector<Monomial>::const_iterator m2 = other.monomials.begin();
-  vector<Monomial> result;
-  back_insert_iterator<vector<Monomial> > r(result);
-
-  while(m1 != monomials.end() && m2 != other.monomials.end()) {
-  int c = O->cmp(m1->second, m2->second);
-  if(c == 0) {
-  coeffType coeff = f->sub(m1->first, m2->first);
-  if(coeff != 0) {
-  r = make_pair(coeff, m1->second);
-  }
-  m1++;
-  m2++;
-  } else if (c > 0) {
-  r = *m1;
-  m1++;
-  } else {
-  r = make_pair(f->minus(m2->first), m2->second);
-  m2++;
-  }
-  }
-// Either m1 is end or m2, never both!
-if(m1 == monomials.end()) {
-for(; m2 != other.monomials.end(); m2++) {
-r = make_pair(f->minus(m2->first), m2->second);
-}
-} else if(m2 == other.monomials.end()) {
-copy(m1,monomials.end(),r);
-}
-swap(monomials, result);
-}*/
 
 vector<Polynomial> Polynomial::createList(const string& s, TMonoid& m, degreeType min) {
 	vector<string> strs;

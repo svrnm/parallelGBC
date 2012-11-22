@@ -26,7 +26,7 @@
 using namespace boost;
 using namespace std;
 
-TMonoid::TMonoid(size_t N) : /*tls(N),*/ N(N), D(64/N) { 
+TMonoid::TMonoid(size_t N) : N(N) { 
 	one = new TermInstance(this);
 	for(size_t i = 0; i < N; i++) {
 		one->set(i, 0);

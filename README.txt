@@ -10,8 +10,10 @@ you may read on here:
 
 http://www.scholarpedia.org/article/Groebner_basis
 
-The code of the project is the result of my master thesis. Documents for
-reading will follow in later releases (some translations have to be done...)
+The code of the project is the result of my master thesis and a paper
+published to the Proceedings of CASC 2012 in Maribor: 
+
+* http://link.springer.com/chapter/10.1007/978-3-642-32973-9_22
 
 
 REQUIREMENTS

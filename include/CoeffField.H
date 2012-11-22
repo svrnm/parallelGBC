@@ -250,6 +250,9 @@ class CoeffField
 			* The coefficient c is given as logarithm of the factor, since by
 			* doing this the table lookup has only to be done once, which
 			* improves performance measurable.
+			*
+			* TODO: This function is not used any more in the F4 implementation,
+			* maybe c can be changed again.
 			*/
 		coeffType mulSub(coeffType a, coeffType b, coeffType c) const {
 			if(b == 0) { return a; }

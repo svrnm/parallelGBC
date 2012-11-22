@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
 	// 2. Create a power product monoid for the terms. Pay attention that ordering and monoid match.
 	TMonoid m(max);
 	// 3. Create a coefficient field.
-	CoeffField* cf = new CoeffField(162007);
+	CoeffField* cf = new CoeffField(32003);
 	// 4. Read in the polynomials from string 't'. The second parameter is the power product monoid.
 	vector<Polynomial> list = Polynomial::createList(t, m);
 

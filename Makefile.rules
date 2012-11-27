@@ -30,9 +30,9 @@ CXX = /usr/bin/g++
 # PGBC_USE_SSE1 enables sse optimizations in the field arithmetics (currently requires GCC)
 # 
 # the following CXXFLAGS are for the GNU COMPILER:
-#CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -D'PGBC_COEFF_BITS=16' -std=c++0x
+CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -D'PGBC_COEFF_BITS=16' -std=c++0x
 # Possible FLAGS:
-CXXFLAGS = -fPIC -Wall -fopenmp -O3 -march=native -pipe -D'PGBC_COEFF_BITS=16' -D'PGBC_USE_SSE=1' -std=c++0x
+#CXXFLAGS = -fPIC -Wall -fopenmp -O3 -march=native -pipe -D'PGBC_COEFF_BITS=16' -D'PGBC_USE_SSE=1' -std=c++0x
 # DEBUG FLAGS:
 #CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -D'PGBC_COEFF_BITS=16' -D'PGBC_USE_SSE=1' -std=c++0x -g3 -pg -gdwarf-2
 

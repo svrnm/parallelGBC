@@ -192,6 +192,7 @@ Polynomial Polynomial::createInstance(const string& s, TMonoid& m, degreeType mi
 	vector<Monomial> monomials;
 	boost::split(strs, s2, boost::is_any_of("+"));
 	for(size_t i = 0; i < strs.size(); i++) {
+		if(strs[i].size() == 0) { continue; }
 		string current = boost::replace_first_copy(strs[i], "x", "s");
 		boost::trim(current);
 		boost::split(strs2, current, boost::is_any_of("s"));

@@ -66,6 +66,8 @@ class TOrdering {
 		 * Return the name of the given term ordering
 		 */
     virtual std::string name() const = 0;
+
+		virtual ~TOrdering() {}
 };
 
 /**

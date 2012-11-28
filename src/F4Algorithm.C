@@ -235,7 +235,7 @@ void F4::pReduceRange(size_t i, tbb::blocked_range<size_t>& range) {
 			for(suffix = rs[target].size()-1; suffix >= 0 && rs[target][suffix] == 0; suffix--);
 			suffixes[target] = ( (suffix+field->pad-1+1)/field->pad )*field->pad;
 			// Convert each entry of the target row into its logarithm value.
-			for(size_t j = 0; j < rs[target].size(); j++) {
+			for(size_t j = prefixes[target]; j < suffixes[target]; j++) {
 				rs[target][j] = field->getFactor(rs[target][j]);
 			}
 		}
@@ -269,7 +269,7 @@ void F4::pReduce()
 			for(suffix = rs[i].size()-1; suffix >= prefix && rs[i][suffix] == 0; suffix--);
 			suffixes[i] = ( (suffix+pad-1+1)/pad) *pad;
 			// Convert each entry of the row into its logarithm value
-			for(size_t j = 0; j < rs[i].size(); j++) {
+			for(size_t j = prefixes[i]; j < suffixes[i]; j++) {
 				rs[i][j] = field->getFactor(rs[i][j]);
 			}
 		}
@@ -395,7 +395,7 @@ void F4::prepare()
 	for(map<Term, uint32_t, Term::comparator>::reverse_iterator it = pivotsOrdered.rbegin(); it != pivotsOrdered.rend(); it++) 
 	{
 		uint32_t o = it->second;
-		vector<pair<uint32_t, coeffType> > entries = pivotOps[it->first];
+		vector<pair<uint32_t, coeffType> >& entries = pivotOps[it->first];
 		for(size_t i = 0; i < entries.size(); i++)
 		{
 			uint32_t t = entries[i].first;
@@ -411,6 +411,7 @@ void F4::prepare()
 				ops.push_back( F4Operations() );
 			}
 		}
+		pivotOps[it->first].clear();
 	}
 #else
 	// TODO: Fix, since pivotOpsOrdered has been removes.
@@ -435,12 +436,8 @@ void F4::prepare()
 	rs.assign(rightSide.size(), coeffRow( (( terms.size()+pad-1 )/ pad ) * pad, 0) );
 	tbb::parallel_for(blocked_range<size_t>(0, rightSide.size()), F4SetupDenseRow(*this));
 	rightSide.clear();
-
-
 	
 	prepareTime += seconds() - timer;
-	//*out << "Operations:\t" << ops.size() << "\n";
-	//*out << "Preparation:\t" << seconds() - timer << "\n";
 }
 
 void F4::reduce(vector<Polynomial>& polys)
@@ -480,6 +477,7 @@ void F4::reduce(vector<Polynomial>& polys)
 		}
 	}
 	// Reset matrix.
+	empty.clear();
 	terms.clear();
 	rs.clear();
 }
@@ -536,6 +534,14 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 	if(verbosity & 1) {
 		*out << "Runtime (s):\t" << seconds() - start << "\n";
 	}
+
+	/* Enable this to collect timings
+	*out << threads << ";";
+	*out << seconds() - start << ";";
+	*out << reductionTime << ";";
+	*out << updateTime << ";";
+	*out << prepareTime << "\n";
+	*/
 
 	return result;
 }

@@ -383,13 +383,13 @@ void F4::prepare()
 	termsUnordered.clear();
 
 		if(verbosity & 64) {
-		*out << "Matrix (r x c):\t" << rightSide.size() << " x " << terms.size() << "+" << pivotsOrdered.size() << "\n";
+			*out << "Matrix (r x c):\t" << rightSide.size() << " x " << terms.size() << "+" << pivotsOrdered.size() << "\n";
 	}
 
 	ops.push_back( F4Operations() );
 	deps.assign(rightSide.size(), 0);
 
-#if 1 
+#if PGBC_SORTING == 1 
 	vector<size_t> l(rightSide.size(),0);
 	//size_t oCount = 0;
 	for(map<Term, uint32_t, Term::comparator>::reverse_iterator it = pivotsOrdered.rbegin(); it != pivotsOrdered.rend(); it++) 
@@ -414,15 +414,16 @@ void F4::prepare()
 		pivotOps[it->first].clear();
 	}
 #else
-	// TODO: Fix, since pivotOpsOrdered has been removes.
 	size_t l = 0;
-	for(map<Term, vector<pair<size_t, coeffType> >, Term::comparator>::reverse_iterator it = pivotOpsOrdered.rbegin(); it != pivotOpsOrdered.rend(); it++)
+	for(map<Term, uint32_t, Term::comparator>::reverse_iterator it = pivotsOrdered.rbegin(); it != pivotsOrdered.rend(); it++) 
 	{
-		size_t o = pivots[it->first];
-		for(size_t i = 0; i < it->second.size(); i++)
+		uint32_t o = it->second;
+		vector<pair<uint32_t, coeffType> >& entries = pivotOps[it->first];
+		for(size_t i = 0; i < entries.size(); i++)
 		{
-			size_t t = it->second[i].first;
-			ops[ l ].push_back( t, o, it->second[i].second );
+			size_t t = entries[i].first;
+			ops[ l ].push_back( t, o, entries[i].second );
+			deps[t]++;
 		}
 		l++;
 		ops.push_back( F4Operations() );

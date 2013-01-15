@@ -35,9 +35,9 @@ class Polynomial;
 
 class TermInstance {
 	protected:
-		degreeType* indets;
 		TMonoid* const owner;
 		size_t hash;
+		degreeType* indets;
 		degreeType degree;
 
 		degreeType* alloc() {
@@ -175,6 +175,7 @@ class TermInstance {
 class Term {
 	protected:
 		const TermInstance* instance;
+
 		Term(TMonoid* owner, const TermInstance* instance) : instance(instance) { }
 	public:
 		Term(TMonoid* owner, const std::vector<degreeType>& i) : instance(owner->createElement(i)) { }

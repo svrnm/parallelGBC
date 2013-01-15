@@ -33,6 +33,7 @@
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_vector.h>
 #include <tbb/blocked_range.h>
+#include <tbb/atomic.h>
 #include "../include/Term.H"
 #include "../include/Polynomial.H"
 #include "../include/F4Utils.H"
@@ -214,7 +215,7 @@ namespace parallelGBC {
 			/**
 			 * The set of terms which occure during reduction and are not leading terms
 			 */
-			std::set<Term, Term::comparator> terms;
+			std::map<Term, uint32_t, Term::comparator> terms;
 
 			/**
 			 * Intermediate storage for critical pairs which will be used for the next
@@ -239,11 +240,13 @@ namespace parallelGBC {
 			/**
 			 * A unordered copy of 'terms'
 			 */
-			tbb::concurrent_unordered_set<Term, std::hash<Term> > termsUnordered;
+			tbb::atomic<uint32_t> termCounter;
+			tbb::concurrent_unordered_map<Term, uint32_t, std::hash<Term> > termsUnordered;
+			
 			/**
 			 * A sparse representation of the matrix entries in the non pivot part
 			 */
-			tbb::concurrent_vector<tbb::concurrent_vector<Monomial> > rightSide;
+			tbb::concurrent_vector<tbb::concurrent_vector<std::pair<coeffType, uint32_t> > > rightSide;
 			/**
 			 * The list of operations which have to be executed. One 'F4Operations' represents a set of operations which
 			 * will be done parallel. No two elements of ops can be done in parallel, since there are dependencies or

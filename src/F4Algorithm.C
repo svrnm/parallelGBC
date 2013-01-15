@@ -304,7 +304,7 @@ void F4::setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<si
 				}
 				if(found) {
 					tbb::concurrent_vector<std::pair<size_t, Term> >::iterator ret = rows.push_back(make_pair(element, t));
-					rightSide.push_back( tbb::concurrent_vector<Monomial>() );
+					rightSide.push_back( tbb::concurrent_vector<std::pair<coeffType, uint32_t> >() );
 					pivots.insert(make_pair(t, std::distance(rows.begin(), ret)));
 				}
 			}
@@ -314,8 +314,11 @@ void F4::setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<si
 		if(found) {
 			pivotOps[t].push_back( make_pair(i, coeff) );
 		} else {
-			rightSide[i].push_back( make_pair(coeff, t) );
-			if(!wontFound) termsUnordered.insert(t);
+			if(!wontFound) {
+				uint32_t temp = termCounter.fetch_and_increment();
+				termsUnordered.insert( make_pair(t,temp) );
+			}
+			rightSide[i].push_back( make_pair(coeff, termsUnordered[t]) );
 		}
 	}
 }
@@ -324,15 +327,8 @@ void F4::setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<si
 void F4::setupDenseRow(tbb::blocked_range<size_t>& range)
 {
 	for(size_t i = range.begin(); i != range.end(); i++) {
-		size_t j = 0;
-		size_t k = 0;
-		sort(rightSide[i].begin(), rightSide[i].end(), MonomialComparator(O));
-		for(set<Term, Term::comparator>::iterator it = terms.begin(); j < rightSide[i].size() /*&& it != terms.end()*/; it++) {
-			if(rightSide[i][j].second == *it) {
-				rs[i][k] = rightSide[i][j].first ;
-				j++;
-			}
-			k++;
+		for(size_t j = 0; j < rightSide[i].size(); j++) {
+			rs[i][ rightSide[i][j].second ] = rightSide[i][j].first;
 		}
 		rightSide[i].clear();
 	}
@@ -362,9 +358,10 @@ void F4::prepare()
 	// SELECTION END
 
 	upper = 2*index;
-	rightSide.assign(rows.size(), tbb::concurrent_vector<Monomial>() );
+	rightSide.assign(rows.size(), tbb::concurrent_vector<pair<coeffType, uint32_t> >() );
 
 	//double testtimer = 0;
+	
 	for(size_t i = 0; i < rows.size(); i++) 
 	{
 		Polynomial& current = groebnerBasis[ rows[i].first ];
@@ -381,6 +378,7 @@ void F4::prepare()
 
 	terms.insert(termsUnordered.begin(), termsUnordered.end());
 	termsUnordered.clear();
+	termCounter = 0;
 
 		if(verbosity & 64) {
 			*out << "Matrix (r x c):\t" << rightSide.size() << " x " << terms.size() << "+" << pivotsOrdered.size() << "\n";
@@ -453,6 +451,18 @@ void F4::reduce(vector<Polynomial>& polys)
 
 	empty.assign(upper, false); // too large, FIX?
 	//double gt = seconds();	
+	
+	coeffRow temp;
+	for(size_t i = 1; i < upper; i+=2) {
+		temp.assign(rs[i].size(), 0);
+		size_t j = 0;
+		for(map<Term, uint32_t, Term::comparator>::iterator it = terms.begin(); it != terms.end(); it++) {
+			temp[j] = rs[i][it->second];
+			j++;
+		}
+		rs[i].swap(temp);
+	}
+	
 	gauss();
 	//*out << "----\nGauss (s):\t" << seconds()-gt << "\n";
 	// ELIMINATE END
@@ -466,11 +476,11 @@ void F4::reduce(vector<Polynomial>& polys)
 		{
 			Polynomial p(currentDegree);
 			size_t j = 0;
-			for(set<Term, Term::comparator>::iterator it = terms.begin(); it != terms.end(); it++) 
+			for(map<Term, uint32_t, Term::comparator>::iterator it = terms.begin(); it != terms.end(); it++) 
 			{
 				if(rs[i][j] != 0)
 				{
-					p.push_back(rs[i][j], *it);
+					p.push_back(rs[i][j], it->first);
 				}
 				j++;
 			}
@@ -492,8 +502,9 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 	this->verbosity = verbosity;
 	this->out = &output;
 
+	termCounter = 0;
 	pairs = F4PairSet( F4Pair::comparator(O) );
-	terms = set<Term, Term::comparator>( Term::comparator(O, true) );
+	terms = map<Term, uint32_t, Term::comparator>( Term::comparator(O, true) );
 	pivotsOrdered = map<Term, uint32_t, Term::comparator>( Term::comparator(O, true) );
 
 	updateTime = 0;

@@ -34,9 +34,9 @@ CXX = /usr/bin/g++-4.7.0
 # the following CXXFLAGS are for the GNU COMPILER:
 #CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -D'PGBC_COEFF_BITS=16' -D'PGBC_SORTING=1' -std=c++0x
 # Possible FLAGS:
-CXXFLAGS = -fPIC -Wall -fopenmp -O3 -march=native -pipe -D'PGBC_COEFF_BITS=16' -D'PGBC_USE_SSE=1' -D'PGDBC_SORTING=1' -std=c++0x
+CXXFLAGS = -fPIC -Wall -fopenmp -O3 -march=native -pipe -D'PGBC_COEFF_BITS=16' -D'PGBC_USE_SSE=1' -D'PGBC_SORTING=1' -std=c++0x
 # DEBUG FLAGS:
-#CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -D'PGBC_COEFF_BITS=16' -D'PGBC_USE_SSE=1' -D'PGBC_SORTING=1' -std=c++0x -g3 -pg -gdwarf-2
+#CXXFLAGS = -fPIC -Wall -fopenmp -pipe -D'PGBC_COEFF_BITS=16' -D'PGBC_USE_SSE=1' -D'PGBC_SORTING=1' -std=c++0x -g3 -pg -gdwarf-2
 
 # Where the compiled (static) library will be stored.
 LIBRARY = ../lib/libf4.a

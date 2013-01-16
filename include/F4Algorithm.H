@@ -247,6 +247,7 @@ namespace parallelGBC {
 			 * A sparse representation of the matrix entries in the non pivot part
 			 */
 			tbb::concurrent_vector<tbb::concurrent_vector<std::pair<coeffType, uint32_t> > > rightSide;
+			
 			/**
 			 * The list of operations which have to be executed. One 'F4Operations' represents a set of operations which
 			 * will be done parallel. No two elements of ops can be done in parallel, since there are dependencies or
@@ -258,6 +259,7 @@ namespace parallelGBC {
 			 * on this matrix
 			 */
 			coeffMatrix rs;
+			coeffMatrix matrix;
 			/**
 			 * For each row in the coefficient matrix this vector stores the information, how many rows have to be reduced
 			 * before the given row is independent and can be used as operator.
@@ -356,6 +358,8 @@ namespace parallelGBC {
 			 * Convert the non pivot part of the matrix from sparse ('rightSide') to dense ('rs') representation
 			 */
 			void setupDenseRow(tbb::blocked_range<size_t>& range);
+			
+			void setupOneDenseRow(size_t i);
 
 			/**
 			 * Reduce a slice of the operation set ops[i] 

@@ -153,19 +153,19 @@ void F4::updatePairs(vector<Polynomial>& polys)
 
 void F4::gauss()
 {
-	// Iterate over all elements in the matrix rs which
+	// Iterate over all elements in the matrix matrix which
 	// aren't having a leading term. These are the rows
 	// in the upper part which have an odd index.
 	for(size_t i = 1; i < upper; i+=2)
 	{
-		// BEGIN: Find the first non zero entry in the current row, which will be the pivot element
+		// BEGIN: Find the fimatrixt non zero entry in the current row, which will be the pivot element
 		// Store the index in 'p' and the value in 'factor'
 		size_t p = 0;
 		bool found = false;
 		coeffType factor = 0;
-		for(p = 0; !found && p < rs[i].size(); p++) {
-			found = rs[i][p] != 0;
-			factor = rs[i][p];
+		for(p = 0; !found && p < matrix[i].size(); p++) {
+			found = matrix[i][p] != 0;
+			factor = matrix[i][p];
 		}
 		p--;
 		// END: Find the first non zero entry
@@ -175,19 +175,19 @@ void F4::gauss()
 		empty[i] = !found;
 		if(found) {
 			// We need a helper row, which stores the logarithms of all entries in
-			// the current row rs[i] since the mulSub operation expects that the 
+			// the current row matrix[i] since the mulSub operation expects that the 
 			// operator row is given by the logarithms of the entries.
-			coeffRow logRow(rs[i].size(), 0);
-			// Normalize the entries of rs[i] if factor is not 1
+			coeffRow logRow(matrix[i].size(), 0);
+			// Normalize the entries of matrix[i] if factor is not 1
 			if(factor != 1) {
 				factor = field->inv(factor);
-				for(size_t j = p; j < rs[i].size(); j++) {
-					rs[i][j] = field->mul(rs[i][j], factor);
-					logRow[j] = field->getFactor(rs[i][j]);
+				for(size_t j = p; j < matrix[i].size(); j++) {
+					matrix[i][j] = field->mul(matrix[i][j], factor);
+					logRow[j] = field->getFactor(matrix[i][j]);
 				}
 			} else {
-				for(size_t j = p; j < rs[i].size(); j++) {
-					logRow[j] = field->getFactor(rs[i][j]);
+				for(size_t j = p; j < matrix[i].size(); j++) {
+					logRow[j] = field->getFactor(matrix[i][j]);
 				}
 			}
 			
@@ -198,12 +198,12 @@ void F4::gauss()
 			{
 				// Compute the relative index
 				size_t k = (i+j)%upper;
-				// If the row rs[k] has an entry at p, reduce this entry.
-				if(rs[k][p] != 0) {
+				// If the row matrix[k] has an entry at p, reduce this entry.
+				if(matrix[k][p] != 0) {
 					// The prefix are all entries before p.
 					size_t prefix = (p/field->pad)*field->pad;
-					// Reduce rs[k] by rs[i] multiplied by rs[k][p].
-					field->mulSub(rs[k], logRow, rs[k][p], prefix, rs[k].size());
+					// Reduce matrix[k] by matrix[i] multiplied by matrix[k][p].
+					field->mulSub(matrix[k], logRow, matrix[k][p], prefix, matrix[k].size());
 				}
 			}
 		}
@@ -216,8 +216,8 @@ void F4::pReduceRange(size_t i, tbb::blocked_range<size_t>& range) {
 	// Iterate ofer the given range of operations.
 	for(size_t j = range.begin(); j < range.end(); j++)
 	{
-		// Get the target row
 		size_t target = ops[i].targets[j];
+		// Get the target row
 		// Subtract from the target row the operator row multiplied with the factor. The prefixes and the suffixes
 		// for the operator row are precomputed
 		field->mulSub(rs[target], rs[ops[i].opers[j]], ops[i].factors[j], prefixes[ ops[i].opers[j] ],suffixes[ ops[i].opers[j] ]);
@@ -244,41 +244,71 @@ void F4::pReduceRange(size_t i, tbb::blocked_range<size_t>& range) {
 
 void F4::pReduce()
 {
-
-	// Preset the 0-paddings of all rows to zero
-	prefixes.assign(rs.size(), 0);
-	suffixes.assign(rs.size(), 0);
-
 	// The 'pad' is the padding which is required by the SSE vectors,
 	// so even if a prefix may be some elements longer it has to be
 	// cut down to a value which is divisible by pad
 	size_t pad = field->pad;
 
-	// Iterate over all matrix rows
-	for(size_t i = 0; i < rs.size(); i++){
-		// If the current row is already full reduced (=has no dependencies), is not
-		// empty and is not in a row, which will never be atarget before gauss(),
-		// compute the prefixes and suffixes and convert the row into log(row)
-		// TODO: Merge this and the same procedure above into a function
-		if(deps[i] == 0 && rs[i].size() > 0 && (i > upper || i % 2 == 0 )) {
-			size_t prefix, suffix;
-			// Find the 0-paddings of the row at the beginning
-			for(prefix = 0; prefix < rs[i].size() && rs[i][prefix] == 0; prefix++);
-			prefixes[i] = ( (prefix)/pad ) * pad; // prefix is the first non zero entry
-			// Find the 0-padding of thw row at the end
-			for(suffix = rs[i].size()-1; suffix >= prefix && rs[i][suffix] == 0; suffix--);
-			suffixes[i] = ( (suffix+pad-1+1)/pad) *pad;
-			// Convert each entry of the row into its logarithm value
-			for(size_t j = prefixes[i]; j < suffixes[i]; j++) {
-				rs[i][j] = field->getFactor(rs[i][j]);
+	size_t block = 1024;
+	size_t end;
+	size_t s = (( terms.size()+block-1 )/ block ) * block;
+
+	//rs.assign(rightSide.size(), coeffRow((( terms.size()+(pad)-1 )/ pad ) * pad, 0));
+	//tbb::parallel_for(blocked_range<size_t>(0, rightSide.size()), F4SetupDenseRow(*this));
+	// Preset the 0-paddings of all rows to zero
+	//prefixes.assign(rs.size(), 0);
+	//suffixes.assign(rs.size(), 0);
+
+	rs.assign(rightSide.size(), coeffRow(block, 0) );
+	matrix.assign(upper, coeffRow());
+	prefixes.assign(rs.size(), 0);
+	suffixes.assign(rs.size(), 0);
+	vector<size_t> savedDeps(deps.begin(), deps.end());
+
+
+	for(size_t start = 0; start < s; start+=block) {
+		if(start+block < terms.size()) {
+			end = start+block:
+		} else {
+			end = terms.size();
+		}
+
+		tbb::parallel_for(blocked_range<size_t>(start, end), F4SetupDenseRow(*this, start));
+
+		// Iterate over all matrix rows
+		for(size_t i = 0; i < rs.size(); i++){
+			// If the current row is already full reduced (=has no dependencies), is not
+			// empty and is not in a row, which will never be atarget before gauss(),
+			// compute the prefixes and suffixes and convert the row into log(row)
+			// TODO: Merge this and the same procedure above into a function
+			if(deps[i] == 0 && rs[i].size() > 0 && (i > upper || i % 2 == 0 )) {
+				size_t prefix, suffix;
+				// Find the 0-paddings of the row at the beginning
+				for(prefix = 0; prefix < rs[i].size() && rs[i][prefix] == 0; prefix++);
+				prefixes[i] = ( (prefix)/pad ) * pad; // prefix is the first non zero entry
+				// Find the 0-padding of thw row at the end
+				for(suffix = rs[i].size()-1; suffix >= prefix && rs[i][suffix] == 0; suffix--);
+				suffixes[i] = ( (suffix+pad-1+1)/pad) *pad;
+				// Convert each entry of the row into its logarithm value
+				for(size_t j = prefixes[i]; j < suffixes[i]; j++) {
+					rs[i][j] = field->getFactor(rs[i][j]);
+				}
 			}
 		}
-	}
 
-	// Iterate over all operation blocks
-	for(size_t i = 0; i < ops.size(); i++) {
-		// Split the given set of operations for parallel reduction
-		tbb::parallel_for(blocked_range<size_t>(0, ops[i].size()), F4PReduceRange(*this, i));
+		// Iterate over all operation blocks
+		for(size_t i = 0; i < ops.size(); i++) {
+			// Split the given set of operations for parallel reduction
+			tbb::parallel_for(blocked_range<size_t>(0, ops[i].size()), F4PReduceRange(*this, i));
+		}
+
+		for(size_t i = 0; i < upper; i++) {
+			matrix[i].insert(matrix[i].end(), rs[i].begin(), rs[i].end()); // copy rows to matrix;
+		}
+		std::copy(savedDeps.begin(), savedDeps.end(), deps.begin());
+		std::fill(rs.begin(),rs.end(), coeffRow(block, 0) );
+		std::fill(prefixes.begin(),prefixes.end(),0);
+		std::fill(suffixes.begin(),suffixes.end(),0);
 	}
 }
 
@@ -324,14 +354,17 @@ void F4::setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<si
 }
 
 
-void F4::setupDenseRow(tbb::blocked_range<size_t>& range)
+void F4::setupDenseRow(tbb::blocked_range<size_t>& range, size_t offset)
 {
 	for(size_t i = range.begin(); i != range.end(); i++) {
-		for(size_t j = 0; j < rightSide[i].size(); j++) {
-			rs[i][ rightSide[i][j].second ] = rightSide[i][j].first;
-		}
-		rightSide[i].clear();
+		setupOneDenseRow(i);
 	}
+}
+
+void F4::setupOneDenseRow(size_t i, size_t offset) {
+		for(size_t j = 0; j < rightSide[i].size(); j++) {
+			rs[i][ rightSide[i][j].second - offset ] = rightSide[i][j].first;
+		}
 }
 
 void F4::prepare()
@@ -386,10 +419,9 @@ void F4::prepare()
 
 	ops.push_back( F4Operations() );
 	deps.assign(rightSide.size(), 0);
-
+	size_t oCounter = 0;
 #if PGBC_SORTING == 1 
 	vector<size_t> l(rightSide.size(),0);
-	//size_t oCount = 0;
 	for(map<Term, uint32_t, Term::comparator>::reverse_iterator it = pivotsOrdered.rbegin(); it != pivotsOrdered.rend(); it++) 
 	{
 		uint32_t o = it->second;
@@ -400,6 +432,7 @@ void F4::prepare()
 			if(l[ o ] > l[t]) {
 				l[t] = l[o];
 			}
+			oCounter++;
 			ops[ l[t] ].push_back( t,o,entries[i].second );
 			//oCount++;
 			deps[t]++; // target t has deps[t] operations do be done before it can be used as operator
@@ -420,6 +453,7 @@ void F4::prepare()
 		for(size_t i = 0; i < entries.size(); i++)
 		{
 			size_t t = entries[i].first;
+			oCounter++;
 			ops[ l ].push_back( t, o, entries[i].second );
 			deps[t]++;
 		}
@@ -430,11 +464,10 @@ void F4::prepare()
 	pivotOps.clear();
 	pivotsOrdered.clear();
 	ops.pop_back();
-	
-	size_t pad = field->pad;
-	rs.assign(rightSide.size(), coeffRow( (( terms.size()+pad-1 )/ pad ) * pad, 0) );
-	tbb::parallel_for(blocked_range<size_t>(0, rightSide.size()), F4SetupDenseRow(*this));
-	rightSide.clear();
+		if(verbosity & 64) {
+			*out << "Operations:\t" << oCounter << "\n";
+			*out << "in levels:\t" << ops.size() << "\n";
+		}
 	
 	prepareTime += seconds() - timer;
 }
@@ -446,6 +479,8 @@ void F4::reduce(vector<Polynomial>& polys)
 	// ELIMINATE
 	double timer = seconds();
 	pReduce();
+	
+	
 	ops.clear();
 	//timer = seconds();
 
@@ -490,6 +525,7 @@ void F4::reduce(vector<Polynomial>& polys)
 	// Reset matrix.
 	empty.clear();
 	terms.clear();
+	rightSide.clear();
 	rs.clear();
 }
 

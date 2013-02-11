@@ -152,6 +152,18 @@ namespace parallelGBC {
 			factors.push_back( f );
 		}
 
+		int32_t target(size_t i) {
+			return targets[i];
+		}
+
+		int32_t oper(size_t i) {
+			return opers[i];
+		}
+
+		coeffType factor(size_t i) {
+			return factors[i];
+		}
+
 		/**
 		 * Returns the size of the container which is equivalent to the number of stored operations
 		 */
@@ -246,7 +258,8 @@ namespace parallelGBC {
 			/**
 			 * A sparse representation of the matrix entries in the non pivot part
 			 */
-			tbb::concurrent_vector<tbb::concurrent_vector<std::pair<coeffType, uint32_t> > > rightSide;
+			tbb::concurrent_unordered_map<uint32_t, tbb::concurrent_vector<std::pair<coeffType, uint32_t> > > rightSide;
+			//tbb::concurrent_vector<tbb::concurrent_vector<std::pair<coeffType, uint32_t> > > rightSide;
 			
 			/**
 			 * The list of operations which have to be executed. One 'F4Operations' represents a set of operations which
@@ -260,6 +273,8 @@ namespace parallelGBC {
 			 */
 			coeffMatrix rs;
 			coeffMatrix matrix;
+
+
 			/**
 			 * For each row in the coefficient matrix this vector stores the information, how many rows have to be reduced
 			 * before the given row is independent and can be used as operator.
@@ -279,6 +294,11 @@ namespace parallelGBC {
 			 * The number of rows in the matrix representing S-Polynomials.
 			 */
 			size_t upper;
+
+
+			size_t reduceBlockSize;
+			
+			size_t rowCount;
 
 			/**
 			 * Stores during 'gauss' for each row if the given row is empty ( only zero entries )
@@ -357,10 +377,8 @@ namespace parallelGBC {
 			/**
 			 * Convert the non pivot part of the matrix from sparse ('rightSide') to dense ('rs') representation
 			 */
-			void setupDenseRow(tbb::blocked_range<size_t>& range);
+			void setupDenseRow(tbb::blocked_range<size_t>& range, size_t offset);
 			
-			void setupOneDenseRow(size_t i);
-
 			/**
 			 * Reduce a slice of the operation set ops[i] 
 			 */
@@ -424,18 +442,19 @@ namespace parallelGBC {
 		 * The used instance of the F4 algorithm
 		 */
 		F4& f4;
+		size_t offset;
 
 		/**
 		 * Construct a new instance of F4SetupDenseRow
 		 */
-		F4SetupDenseRow(F4& f4) : f4(f4) {}
+		F4SetupDenseRow(F4& f4, size_t offset) : f4(f4), offset(offset) {}
 
 		/**
 		 * Call back the setupDenseRow function of the given f4 instance
 		 */
 		void operator() (tbb::blocked_range<size_t>& range) const
 		{
-			f4.setupDenseRow(range);
+			f4.setupDenseRow(range, offset);
 		}
 	};
 

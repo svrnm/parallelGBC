@@ -156,7 +156,7 @@ void F4::gauss()
 	// Iterate over all elements in the matrix matrix which
 	// aren't having a leading term. These are the rows
 	// in the upper part which have an odd index.
-	for(size_t i = 1; i < upper; i+=2)
+	for(size_t i = 0; i < upper/2; i++)
 	{
 		// BEGIN: Find the fimatrixt non zero entry in the current row, which will be the pivot element
 		// Store the index in 'p' and the value in 'factor'
@@ -194,10 +194,10 @@ void F4::gauss()
 			// Iterate over all rows behind and before the current index
 			// TODO: Do this with tbb:parallel_for()?
 			#pragma omp parallel for num_threads( threads )
-			for(size_t j = 2; j < upper; j+=2)
+			for(size_t j = 1; j < upper/2; j++)
 			{
 				// Compute the relative index
-				size_t k = (i+j)%upper;
+				size_t k = (i+j)%(upper/2);
 				// If the row matrix[k] has an entry at p, reduce this entry.
 				if(matrix[k][p] != 0) {
 					// The prefix are all entries before p.
@@ -216,11 +216,11 @@ void F4::pReduceRange(size_t i, tbb::blocked_range<size_t>& range) {
 	// Iterate ofer the given range of operations.
 	for(size_t j = range.begin(); j < range.end(); j++)
 	{
-		size_t target = ops[i].targets[j];
+		size_t target = ops[i].target( j );
 		// Get the target row
 		// Subtract from the target row the operator row multiplied with the factor. The prefixes and the suffixes
 		// for the operator row are precomputed
-		field->mulSub(rs[target], rs[ops[i].opers[j]], ops[i].factors[j], prefixes[ ops[i].opers[j] ],suffixes[ ops[i].opers[j] ]);
+		field->mulSub(rs[target], rs[ops[i].oper( j )], ops[i].factor( j ), prefixes[ ops[i].oper( j ) ],suffixes[ ops[i].oper( j ) ]);
 		// Reduce the dependencies of the target by one
 		deps[ target ]--;
 		// If the current target is fully reduced (= has no dependencies), is not empty
@@ -232,8 +232,10 @@ void F4::pReduceRange(size_t i, tbb::blocked_range<size_t>& range) {
 			for(prefix = 0; prefix < rs[ target ].size() && rs[ target ][prefix] == 0; prefix++);
 			prefixes[ target ] = ( prefix/field->pad )*field->pad;
 			// Find the 0-padding of the target row at the end
-			for(suffix = rs[target].size()-1; suffix >= 0 && rs[target][suffix] == 0; suffix--);
-			suffixes[target] = ( (suffix+field->pad-1+1)/field->pad )*field->pad;
+			for(suffix = rs[target].size()-1; suffix > 0 && rs[target][suffix] == 0; suffix--) {
+//				cout << suffix << " SUFFIX\n";
+			}
+			suffixes[target] = ( (suffix+field->pad)/field->pad )*field->pad;
 			// Convert each entry of the target row into its logarithm value.
 			for(size_t j = prefixes[target]; j < suffixes[target]; j++) {
 				rs[target][j] = field->getFactor(rs[target][j]);
@@ -249,29 +251,26 @@ void F4::pReduce()
 	// cut down to a value which is divisible by pad
 	size_t pad = field->pad;
 
-	size_t block = 1024;
 	size_t end;
-	size_t s = (( terms.size()+block-1 )/ block ) * block;
+	size_t s = (( terms.size()+reduceBlockSize-1 )/ reduceBlockSize ) * reduceBlockSize;
 
-	//rs.assign(rightSide.size(), coeffRow((( terms.size()+(pad)-1 )/ pad ) * pad, 0));
-	//tbb::parallel_for(blocked_range<size_t>(0, rightSide.size()), F4SetupDenseRow(*this));
+	rs.assign(rowCount, coeffRow(reduceBlockSize, 0) );
+	matrix.assign(upper/2, coeffRow());
 	// Preset the 0-paddings of all rows to zero
-	//prefixes.assign(rs.size(), 0);
-	//suffixes.assign(rs.size(), 0);
-
-	rs.assign(rightSide.size(), coeffRow(block, 0) );
-	matrix.assign(upper, coeffRow());
 	prefixes.assign(rs.size(), 0);
 	suffixes.assign(rs.size(), 0);
 	vector<size_t> savedDeps(deps.begin(), deps.end());
 
 
-	for(size_t start = 0; start < s; start+=block) {
-		if(start+block < terms.size()) {
-			end = start+block:
+	for(size_t start = 0; start < s; start+=reduceBlockSize) {
+		if(start+reduceBlockSize < terms.size()) {
+			end = start+reduceBlockSize;
 		} else {
 			end = terms.size();
 		}
+
+		//cout << start << " - " << end << "\n";
+
 
 		tbb::parallel_for(blocked_range<size_t>(start, end), F4SetupDenseRow(*this, start));
 
@@ -302,14 +301,20 @@ void F4::pReduce()
 			tbb::parallel_for(blocked_range<size_t>(0, ops[i].size()), F4PReduceRange(*this, i));
 		}
 
-		for(size_t i = 0; i < upper; i++) {
-			matrix[i].insert(matrix[i].end(), rs[i].begin(), rs[i].end()); // copy rows to matrix;
+		//for(size_t i = 0; i < upper; i++) {
+		for(size_t i = 1, j = 0; i < upper; i+=2, j++) {
+			matrix[j].insert(matrix[j].end(), rs[i].begin(), rs[i].end()); // copy rows to matrix;
 		}
 		std::copy(savedDeps.begin(), savedDeps.end(), deps.begin());
-		std::fill(rs.begin(),rs.end(), coeffRow(block, 0) );
+		std::fill(rs.begin(),rs.end(), coeffRow(reduceBlockSize, 0) );
 		std::fill(prefixes.begin(),prefixes.end(),0);
 		std::fill(suffixes.begin(),suffixes.end(),0);
 	}
+	
+	
+	
+	rs.clear();
+	rightSide.clear();
 }
 
 void F4::setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<size_t>& range) 
@@ -334,7 +339,6 @@ void F4::setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<si
 				}
 				if(found) {
 					tbb::concurrent_vector<std::pair<size_t, Term> >::iterator ret = rows.push_back(make_pair(element, t));
-					rightSide.push_back( tbb::concurrent_vector<std::pair<coeffType, uint32_t> >() );
 					pivots.insert(make_pair(t, std::distance(rows.begin(), ret)));
 				}
 			}
@@ -348,7 +352,8 @@ void F4::setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<si
 				uint32_t temp = termCounter.fetch_and_increment();
 				termsUnordered.insert( make_pair(t,temp) );
 			}
-			rightSide[i].push_back( make_pair(coeff, termsUnordered[t]) );
+			// Column -> (Entry, Row)
+			rightSide[ termsUnordered[t] ].push_back( make_pair(coeff, i) );
 		}
 	}
 }
@@ -357,14 +362,11 @@ void F4::setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<si
 void F4::setupDenseRow(tbb::blocked_range<size_t>& range, size_t offset)
 {
 	for(size_t i = range.begin(); i != range.end(); i++) {
-		setupOneDenseRow(i);
-	}
-}
-
-void F4::setupOneDenseRow(size_t i, size_t offset) {
 		for(size_t j = 0; j < rightSide[i].size(); j++) {
-			rs[i][ rightSide[i][j].second - offset ] = rightSide[i][j].first;
+			rs[ rightSide[i][j].second ][i-offset] = rightSide[i][j].first;
 		}
+		rightSide[i].clear();
+	}
 }
 
 void F4::prepare()
@@ -391,20 +393,19 @@ void F4::prepare()
 	// SELECTION END
 
 	upper = 2*index;
-	rightSide.assign(rows.size(), tbb::concurrent_vector<pair<coeffType, uint32_t> >() );
-
+	//rightSide.assign(rows.size(), tbb::concurrent_vector<pair<coeffType, uint32_t> >() );
 	//double testtimer = 0;
 	
 	for(size_t i = 0; i < rows.size(); i++) 
 	{
 		Polynomial& current = groebnerBasis[ rows[i].first ];
 		Term ir = rows[i].second.div(current.LT());
-
 		// For the pivot rows (even rows and lower part) we start at 1 
 		tbb::parallel_for(blocked_range<size_t>((i > upper || i % 2 == 0 ? 1 : 0), current.size()), F4SetupRow(*this, current, ir, i));
 	}
 	
 	// Clear unneeded data structures.
+	rowCount = rows.size();
 	rows.clear();
 	pivotsOrdered.insert(pivots.begin(), pivots.end());
 	pivots.clear();
@@ -413,15 +414,20 @@ void F4::prepare()
 	termsUnordered.clear();
 	termCounter = 0;
 
-		if(verbosity & 64) {
-			*out << "Matrix (r x c):\t" << rightSide.size() << " x " << terms.size() << "+" << pivotsOrdered.size() << "\n";
+	if(verbosity & 64) {
+			*out << "Matrix (r x c):\t" << rowCount << " x " << terms.size() << "+" << pivotsOrdered.size() << "\n";
+			size_t counter = 0;
+			for(size_t i = 0; i < rightSide.size(); i++) {
+				counter += rightSide[i].size();
+			}
+			*out << "RS density:\t" << ((double)counter / (double)(rowCount * terms.size())  ) << "\n";
 	}
 
 	ops.push_back( F4Operations() );
-	deps.assign(rightSide.size(), 0);
+	deps.assign(rowCount, 0);
 	size_t oCounter = 0;
 #if PGBC_SORTING == 1 
-	vector<size_t> l(rightSide.size(),0);
+	vector<size_t> l(rowCount,0);
 	for(map<Term, uint32_t, Term::comparator>::reverse_iterator it = pivotsOrdered.rbegin(); it != pivotsOrdered.rend(); it++) 
 	{
 		uint32_t o = it->second;
@@ -461,13 +467,14 @@ void F4::prepare()
 		ops.push_back( F4Operations() );
 	}
 #endif
-	pivotOps.clear();
-	pivotsOrdered.clear();
-	ops.pop_back();
 		if(verbosity & 64) {
 			*out << "Operations:\t" << oCounter << "\n";
 			*out << "in levels:\t" << ops.size() << "\n";
+			*out << "Op. Density:\t" << ( (double)oCounter /  (double)(rowCount * pivotsOrdered.size()) ) << "\n";
 		}
+	pivotOps.clear();
+	pivotsOrdered.clear();
+	ops.pop_back();
 	
 	prepareTime += seconds() - timer;
 }
@@ -484,28 +491,38 @@ void F4::reduce(vector<Polynomial>& polys)
 	ops.clear();
 	//timer = seconds();
 
-	empty.assign(upper, false); // too large, FIX?
+	empty.assign(upper/2, false); // too large, FIX?
 	//double gt = seconds();	
 	
 	coeffRow temp;
-	for(size_t i = 1; i < upper; i+=2) {
-		temp.assign(rs[i].size(), 0);
+	// Finally sort the resulting matrix using terms. The previous intermediate matrix was not in in term ordering
+	size_t nCounter = 0;
+	for(size_t i = 0; i < upper/2; i++) {
+		temp.assign(matrix[i].size(), 0);
 		size_t j = 0;
 		for(map<Term, uint32_t, Term::comparator>::iterator it = terms.begin(); it != terms.end(); it++) {
-			temp[j] = rs[i][it->second];
+			if(matrix[i][it->second] != 0) {
+				nCounter++;
+			}
+			temp[j] = matrix[i][it->second];
 			j++;
 		}
-		rs[i].swap(temp);
+		matrix[i].swap(temp);
+	}
+
+	if(verbosity & 64) {
+		cout << "Final Matrix:\t" << (upper/2) << "x" << matrix[0].size() << "\n";
+		cout << "Entries:\t" << nCounter << "\n";
+		cout << "Density:\t" << ((double) nCounter / (double)( (upper/2) * matrix[0].size() ) ) << "\n";
 	}
 	
 	gauss();
-	//*out << "----\nGauss (s):\t" << seconds()-gt << "\n";
-	// ELIMINATE END
+	
 	reductionTime += seconds()-timer;
 	if(verbosity & 32) {
 		*out << "Red. step (s):\t" << seconds()-timer << "\n";
 	}
-	for(size_t i = 1; i < upper; i+=2)
+	for(size_t i = 0; i < upper/2; i++)
 	{
 		if(!empty[i])
 		{
@@ -513,9 +530,9 @@ void F4::reduce(vector<Polynomial>& polys)
 			size_t j = 0;
 			for(map<Term, uint32_t, Term::comparator>::iterator it = terms.begin(); it != terms.end(); it++) 
 			{
-				if(rs[i][j] != 0)
+				if(matrix[i][j] != 0)
 				{
-					p.push_back(rs[i][j], it->first);
+					p.push_back(matrix[i][j], it->first);
 				}
 				j++;
 			}
@@ -525,8 +542,7 @@ void F4::reduce(vector<Polynomial>& polys)
 	// Reset matrix.
 	empty.clear();
 	terms.clear();
-	rightSide.clear();
-	rs.clear();
+	matrix.clear();
 }
 
 vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrdering* o, CoeffField* field, int threads, int verbosity, std::ostream& output)
@@ -537,6 +553,7 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 	this->O = o;
 	this->verbosity = verbosity;
 	this->out = &output;
+	this->reduceBlockSize = 2048;
 
 	termCounter = 0;
 	pairs = F4PairSet( F4Pair::comparator(O) );

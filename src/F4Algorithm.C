@@ -27,7 +27,7 @@ using namespace tbb;
 
 namespace parallelGBC {
 
-void F4::updatePairs(vector<Polynomial>& polys) 
+void F4::updatePairs(vector<Polynomial>& polys, bool initial) 
 {
 	// Setup timer to measuere how long the 'update' takes.
 	double timer = seconds();
@@ -53,11 +53,13 @@ void F4::updatePairs(vector<Polynomial>& polys)
 		// term which is divisible by the leading term of the old element, because
 		// if this would be the case, there would have been a reduction polynomial
 		// reducing this leading term.
+		if(!initial) {
 		for(size_t i = is; insertIntoG && i < groebnerBasis.size(); i++)
-		{
-			if(inGroebnerBasis[i] && h.LT().isDivisibleBy(groebnerBasis[i].LT())) 
 			{
-				insertIntoG = false;
+				if(inGroebnerBasis[i] && h.LT().isDivisibleBy(groebnerBasis[i].LT())) 
+				{
+					insertIntoG = false;
+				}
 			}
 		}
 
@@ -507,13 +509,13 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 	//normalize
 	for_each(generators.begin(), generators.end(), bind(mem_fn(&Polynomial::normalize), _1, field));
 
-	updatePairs(generators);
+	updatePairs(generators, true);
 
 	while( !pairs.empty() ) {
 		vector<Polynomial> polys;
 		reduce(polys);
 		if(!polys.empty()) {
-			updatePairs(polys);
+			updatePairs(polys, false);
 		}
 	}
 

@@ -1,0 +1,5 @@
+test/*.bin
+gmon.out
+*.C.swp
+*.H.swp
+input/equations.txt

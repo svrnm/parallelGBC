@@ -356,7 +356,7 @@ namespace parallelGBC {
 			 * Update the set of critical pairs using the polynomials 'polys',
 			 * which are the new candidates for elements of the groebner basis.
 			 */
-			void updatePairs(std::vector<Polynomial>& polys);
+			void updatePairs(std::vector<Polynomial>& polys, bool initial = false);
 	
 			/**
 			 * Process a S-Polynomial (ir*current) and do the symbolic preprocessing by adding required

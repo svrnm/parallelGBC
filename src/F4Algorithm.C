@@ -212,7 +212,7 @@ void F4::gauss()
 }
 
 
-void F4::pReduceRange(size_t i, tbb::blocked_range<size_t>& range) {
+void F4::pReduceRange(coeffMatrix& rs, vector<size_t>& prefixes, vector<size_t>& suffixes, size_t i, tbb::blocked_range<size_t>& range) {
 	// Iterate ofer the given range of operations.
 	for(size_t j = range.begin(); j < range.end(); j++)
 	{
@@ -254,12 +254,8 @@ void F4::pReduce()
 	size_t end;
 	size_t s = (( terms.size()+reduceBlockSize-1 )/ reduceBlockSize ) * reduceBlockSize;
 
-	rs.assign(rowCount, coeffRow(reduceBlockSize, 0) );
 	matrix.assign(upper/2, coeffRow());
 	// Preset the 0-paddings of all rows to zero
-	prefixes.assign(rs.size(), 0);
-	suffixes.assign(rs.size(), 0);
-	vector<size_t> savedDeps(deps.begin(), deps.end());
 
 
 	for(size_t start = 0; start < s; start+=reduceBlockSize) {
@@ -269,10 +265,15 @@ void F4::pReduce()
 			end = terms.size();
 		}
 
+		coeffMatrix rs(rowCount, coeffRow(reduceBlockSize, 0) );
+		vector<size_t> savedDeps(deps.begin(), deps.end());
+
+		std::vector<size_t> prefixes(rs.size(), 0);
+		std::vector<size_t> suffixes(rs.size(), 0);
 		//cout << start << " - " << end << "\n";
 
 
-		tbb::parallel_for(blocked_range<size_t>(start, end), F4SetupDenseRow(*this, start));
+		tbb::parallel_for(blocked_range<size_t>(start, end), F4SetupDenseRow(*this, rs, start));
 
 		// Iterate over all matrix rows
 		for(size_t i = 0; i < rs.size(); i++){
@@ -298,7 +299,7 @@ void F4::pReduce()
 		// Iterate over all operation blocks
 		for(size_t i = 0; i < ops.size(); i++) {
 			// Split the given set of operations for parallel reduction
-			tbb::parallel_for(blocked_range<size_t>(0, ops[i].size()), F4PReduceRange(*this, i));
+			tbb::parallel_for(blocked_range<size_t>(0, ops[i].size()), F4PReduceRange(*this, rs, prefixes, suffixes, i));
 		}
 
 		//for(size_t i = 0; i < upper; i++) {
@@ -306,14 +307,13 @@ void F4::pReduce()
 			matrix[j].insert(matrix[j].end(), rs[i].begin(), rs[i].end()); // copy rows to matrix;
 		}
 		std::copy(savedDeps.begin(), savedDeps.end(), deps.begin());
-		std::fill(rs.begin(),rs.end(), coeffRow(reduceBlockSize, 0) );
+		/*std::fill(rs.begin(),rs.end(), coeffRow(reduceBlockSize, 0) );
 		std::fill(prefixes.begin(),prefixes.end(),0);
-		std::fill(suffixes.begin(),suffixes.end(),0);
+		std::fill(suffixes.begin(),suffixes.end(),0);*/
 	}
 	
 	
 	
-	rs.clear();
 	rightSide.clear();
 }
 
@@ -359,7 +359,7 @@ void F4::setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<si
 }
 
 
-void F4::setupDenseRow(tbb::blocked_range<size_t>& range, size_t offset)
+void F4::setupDenseRow(coeffMatrix& rs, size_t offset, tbb::blocked_range<size_t>& range)
 {
 	for(size_t i = range.begin(); i != range.end(); i++) {
 		for(size_t j = 0; j < rightSide[i].size(); j++) {
@@ -401,9 +401,10 @@ void F4::prepare()
 		Polynomial& current = groebnerBasis[ rows[i].first ];
 		Term ir = rows[i].second.div(current.LT());
 		// For the pivot rows (even rows and lower part) we start at 1 
+		rightSide.grow_to_at_least( termsUnordered.size() + current.size() );
 		tbb::parallel_for(blocked_range<size_t>((i > upper || i % 2 == 0 ? 1 : 0), current.size()), F4SetupRow(*this, current, ir, i));
 	}
-	
+
 	// Clear unneeded data structures.
 	rowCount = rows.size();
 	rows.clear();
@@ -535,6 +536,9 @@ void F4::reduce(vector<Polynomial>& polys)
 					p.push_back(matrix[i][j], it->first);
 				}
 				j++;
+			}
+			if(verbosity & 128) {
+				*out << "NEW POLY:\t" << p << "\n";
 			}
 			polys.push_back( p );
 		}

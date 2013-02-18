@@ -258,8 +258,8 @@ namespace parallelGBC {
 			/**
 			 * A sparse representation of the matrix entries in the non pivot part
 			 */
-			tbb::concurrent_unordered_map<uint32_t, tbb::concurrent_vector<std::pair<coeffType, uint32_t> > > rightSide;
-			//tbb::concurrent_vector<tbb::concurrent_vector<std::pair<coeffType, uint32_t> > > rightSide;
+			//tbb::concurrent_unordered_map<uint32_t, tbb::concurrent_vector<std::pair<coeffType, uint32_t> > > rightSide;
+			tbb::concurrent_vector<tbb::concurrent_vector<std::pair<coeffType, uint32_t> > > rightSide;
 			
 			/**
 			 * The list of operations which have to be executed. One 'F4Operations' represents a set of operations which
@@ -271,7 +271,6 @@ namespace parallelGBC {
 			 * The dense representation of the matrix entries in the non pivot part. The operations of 'ops' will be executed
 			 * on this matrix
 			 */
-			coeffMatrix rs;
 			coeffMatrix matrix;
 
 
@@ -281,20 +280,11 @@ namespace parallelGBC {
 			 */
 			std::vector<size_t> deps;
 
-			/**
-			 * For each (operator) row the information is stored how many zeros are prefixing the given row of non pivots.
-			 */
-			std::vector<size_t> prefixes;
-			/**
-			 * For each (operator) row the information is stored how many zeros are suffixing the given row of non pivots
-			 */
-			std::vector<size_t> suffixes;
 
 			/**
 			 * The number of rows in the matrix representing S-Polynomials.
 			 */
 			size_t upper;
-
 
 			size_t reduceBlockSize;
 			
@@ -377,12 +367,12 @@ namespace parallelGBC {
 			/**
 			 * Convert the non pivot part of the matrix from sparse ('rightSide') to dense ('rs') representation
 			 */
-			void setupDenseRow(tbb::blocked_range<size_t>& range, size_t offset);
+			void setupDenseRow(coeffMatrix& rs, size_t offset, tbb::blocked_range<size_t>& range);
 			
 			/**
 			 * Reduce a slice of the operation set ops[i] 
 			 */
-			void pReduceRange(size_t i, tbb::blocked_range<size_t>& range);
+			void pReduceRange(coeffMatrix& rs, std::vector<size_t>& prefixes, std::vector<size_t>& suffixes, size_t i, tbb::blocked_range<size_t>& range);
 
 
 			/**
@@ -442,19 +432,20 @@ namespace parallelGBC {
 		 * The used instance of the F4 algorithm
 		 */
 		F4& f4;
+		coeffMatrix& rs;
 		size_t offset;
 
 		/**
 		 * Construct a new instance of F4SetupDenseRow
 		 */
-		F4SetupDenseRow(F4& f4, size_t offset) : f4(f4), offset(offset) {}
+		F4SetupDenseRow(F4& f4, coeffMatrix& rs, size_t offset) : f4(f4), rs(rs), offset(offset) {}
 
 		/**
 		 * Call back the setupDenseRow function of the given f4 instance
 		 */
 		void operator() (tbb::blocked_range<size_t>& range) const
 		{
-			f4.setupDenseRow(range, offset);
+			f4.setupDenseRow(rs, offset, range);
 		}
 	};
 
@@ -468,6 +459,9 @@ namespace parallelGBC {
 		 * The used instance of the F4 algorithm
 		 */
 		F4& f4;
+		coeffMatrix& rs;
+		std::vector<size_t>& prefixes;
+		std::vector<size_t>& suffixes;
 	
 		/**
 		 * The index for the current set of operations (f4.ops[i])
@@ -477,14 +471,14 @@ namespace parallelGBC {
 		/**
 		 * Construct a new instance of F4PReduceRange
 		 */
-		F4PReduceRange(F4& f4, size_t i) : f4(f4), i(i) {}
+		F4PReduceRange(F4& f4, coeffMatrix& rs, std::vector<size_t>& prefixes, std::vector<size_t>& suffixes, size_t i) : f4(f4), rs(rs), prefixes(prefixes), suffixes(suffixes), i(i) {}
 
 		/**
 		 * Call back the pReduceRange function of the given f4 instance
 		 */
 		void operator() (tbb::blocked_range<size_t>& range) const
 		{
-			f4.pReduceRange(i, range);
+			f4.pReduceRange(rs, prefixes, suffixes, i, range);
 		}
 	};
 }

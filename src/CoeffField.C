@@ -25,7 +25,6 @@ CoeffField::CoeffField(coeffType modn) : modn(modn)
 {
 	// If SSE is enabled this vector is needed to do computations in the
 	// coefficient field.
-	modnvec = __COEFF_FIELD_VECSET1( modn );
 
 	// Preassign exps, logs and invs. The
 	// following initalization code is inspired by Singular (kernel/modulop.cc, function npInitChar)
@@ -79,29 +78,23 @@ void CoeffField::mulSub(coeffRow& t, coeffRow& o, coeffType c, size_t prefix, si
 
 // Check if SSE is enabled at compile time
 #if PGBC_USE_SSE == 1
-	// Set the vector x to the beginning of the target. This will load __COEFF_FIELD_INTVECSIZE values into the vector
-	__m128i* x = (__m128i*) &(t[0]);
 	// Precompute the logarithm of logs[c] to speed up the computation, since the lookup has only to be done once
 	coeffType lc = logs[c];
+	coeffRow oc(o.begin(), o.end());
+	for(size_t i = prefix; i < suffix; i++) {
+		oc[i] = o[i] != 0 ? exps[o[i] + lc] : 0;
+	}
+
+	// Set the vector x to the beginning of the target. This will load __COEFF_FIELD_INTVECSIZE values into the vector
+	__m128i* x = (__m128i*) &(t[0]);
+	__m128i* y = (__m128i*) &(oc[0]);
+	__m128i modnvec = __COEFF_FIELD_VECSET1( modn );
+	
 	// set the first vector position by the given prefix (=0-padding at the beginning)
-	size_t i = prefix / __COEFF_FIELD_INTVECSIZE;
+	prefix = prefix / __COEFF_FIELD_INTVECSIZE;
+	suffix = suffix / __COEFF_FIELD_INTVECSIZE;
 	// Iterate over the target+operator vector by doing __COEFF_FIELD_INTVECSIZE steps in parallel
-	for(size_t k = prefix; k < suffix; k+=__COEFF_FIELD_INTVECSIZE) {
-
-// BEGIN: Setup the operator vector
-// LOAD __COEFF_FIELD_INTVECSIZE values into the operator y, the values of the vector o are multiplied with lc before
-// they are stored in the operator vector.
-#if PGBC_COEFF_BITS <= 8
-		__m128i y = _mm_set_epi8(omulc(15),omulc(14),omulc(13),omulc(12),omulc(11),omulc(10),omulc(9),omulc(8), omulc(7),omulc(6),omulc(5),omulc(4),omulc(3),omulc(2),omulc(1),omulc(0));
-#else
-#if PGBC_COEFF_BITS <= 16
-		__m128i y = _mm_set_epi16(omulc(7),omulc(6),omulc(5),omulc(4),omulc(3),omulc(2),omulc(1),omulc(0));
-#else
-		__m128i y = _mm_set_epi32(omulc(3),omulc(2),omulc(1),omulc(0));
-#endif
-#endif
-// END: Setup the operator vector
-
+	for(size_t i = prefix; i < suffix; i++ ) {
 		// Read this as: x[i] = x[i] + ( (y > x[i] & modn) ) - y;
 		//
 		// This computes for __COEFF_FIELD_INTVECSIZE values the reduction at once. The reduction is done
@@ -113,8 +106,7 @@ void CoeffField::mulSub(coeffRow& t, coeffRow& o, coeffType c, size_t prefix, si
 		// 3) x[i] + tmp1 = tmp2: For each position in x[i] the value is increased by modn if the condition in 1 is true 
 		// 4) x[i] + y = x[i]: Finally x[i] and y can be added.
 		//
-		x[i] = __COEFF_FIELD_VECADD(x[i], __COEFF_FIELD_VECSUB(__COEFF_FIELD_VECAND(__COEFF_FIELD_VECGT(y, x[i]), modnvec), y));
-		i++;
+		x[i] = __COEFF_FIELD_VECADD(x[i], __COEFF_FIELD_VECSUB(__COEFF_FIELD_VECAND(__COEFF_FIELD_VECGT(y[i], x[i]), modnvec), y[i]));
 	}
 // If SSE is not enabled at compile time
 #else

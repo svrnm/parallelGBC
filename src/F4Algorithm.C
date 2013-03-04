@@ -219,10 +219,11 @@ void F4::pReduceRange(coeffMatrix& rs, vector<size_t>& prefixes, vector<size_t>&
 	for(size_t j = range.begin(); j < range.end(); j++)
 	{
 		size_t target = ops[i].target( j );
+		size_t oper = ops[i].oper( j );
 		// Get the target row
 		// Subtract from the target row the operator row multiplied with the factor. The prefixes and the suffixes
 		// for the operator row are precomputed
-		field->mulSub(rs[target], rs[ops[i].oper( j )], ops[i].factor( j ), prefixes[ ops[i].oper( j ) ],suffixes[ ops[i].oper( j ) ]);
+		field->mulSub(rs[target], rs[oper], ops[i].factor( j ), prefixes[oper],suffixes[oper]);
 		// Reduce the dependencies of the target by one
 		deps[ target ]--;
 		// If the current target is fully reduced (= has no dependencies), is not empty
@@ -234,9 +235,7 @@ void F4::pReduceRange(coeffMatrix& rs, vector<size_t>& prefixes, vector<size_t>&
 			for(prefix = 0; prefix < rs[ target ].size() && rs[ target ][prefix] == 0; prefix++);
 			prefixes[ target ] = ( prefix/field->pad )*field->pad;
 			// Find the 0-padding of the target row at the end
-			for(suffix = rs[target].size()-1; suffix > 0 && rs[target][suffix] == 0; suffix--) {
-//				cout << suffix << " SUFFIX\n";
-			}
+			for(suffix = rs[target].size()-1; suffix > 0 && rs[target][suffix] == 0; suffix--) { }
 			suffixes[target] = ( (suffix+field->pad)/field->pad )*field->pad;
 			// Convert each entry of the target row into its logarithm value.
 			for(size_t j = prefixes[target]; j < suffixes[target]; j++) {
@@ -559,7 +558,7 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 	this->O = o;
 	this->verbosity = verbosity;
 	this->out = &output;
-	this->reduceBlockSize = 2048;
+	this->reduceBlockSize = 1024;
 
 	termCounter = 0;
 	pairs = F4PairSet( F4Pair::comparator(O) );

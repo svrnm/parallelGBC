@@ -145,7 +145,7 @@ class CoeffField
 		 * The SSE implementation of mulSub(coeffRow...) requires a vector which contains
 		 * __COEFF_FIELD_INTVECSIZE times the value of modn.
 		 */
-		__m128i modnvec;
+		//__m128i modnvec;
 
 	public:
 		/**

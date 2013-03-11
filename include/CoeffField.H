@@ -124,7 +124,7 @@ class CoeffField
 		 * divisible by __COEFF_FIELD_INTVECSIZE={4,8,16}
 		 */
 		static const size_t pad = __COEFF_FIELD_INTVECSIZE;
-
+		
 		/**
 		 * The modulus, i.e. n of the finite field F_n
 		 */
@@ -189,7 +189,6 @@ class CoeffField
 		 */
 		coeffType bringIn(coeffType a) const
 		{
-
 			return ((a % modn) + modn) % modn;
 		}
 
@@ -259,7 +258,6 @@ class CoeffField
 			b = exps[logs[b] + c];
 			return b > a ? a + modn - b : a - b;
 		}
-
 
 // Helper function for the setup of the SSE vectors, this
 // means multiply o[k+d] with the logarithm of lc.
@@ -332,6 +330,5 @@ class CoeffField
 			}
 #endif
 		}
-
 };
 #endif

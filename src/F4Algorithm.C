@@ -160,7 +160,7 @@ void F4::gauss()
 	// in the upper part which have an odd index.
 	for(size_t i = 0; i < upper/2; i++)
 	{
-		// BEGIN: Find the fimatrixt non zero entry in the current row, which will be the pivot element
+		// BEGIN: Find the first matrix with non zero entry in the current row, which will be the pivot element
 		// Store the index in 'p' and the value in 'factor'
 		size_t p = 0;
 		bool found = false;
@@ -398,7 +398,7 @@ void F4::prepare()
 		rightSide.grow_to_at_least( termsUnordered.size() + current.size() );
 		tbb::parallel_for(blocked_range<size_t>((i > upper || i % 2 == 0 ? 1 : 0), current.size()), F4SetupRow(*this, current, ir, i));
 	}
-
+	
 	// Clear unneeded data structures.
 	rowCount = rows.size();
 	rows.clear();
@@ -483,8 +483,6 @@ void F4::reduce(vector<Polynomial>& polys)
 	pReduce();
 	ops.clear();
 	empty.assign(upper/2, false);
-	
-	*out << "PR. step (s):\t" << seconds()-timer << "\n";
 	
 	coeffRow temp;
 	// Finally sort the resulting matrix using terms. The previous intermediate matrix was not in in term ordering

@@ -1,4 +1,5 @@
 Parallel Groebner Basis Computation (beta 0.7)
+=======
 
 LICENSE
 This program is free software; see LICENSE.TXT for more details

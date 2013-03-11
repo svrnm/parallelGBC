@@ -273,13 +273,11 @@ namespace parallelGBC {
 			 */
 			coeffMatrix matrix;
 
-
 			/**
 			 * For each row in the coefficient matrix this vector stores the information, how many rows have to be reduced
 			 * before the given row is independent and can be used as operator.
 			 */
 			std::vector<size_t> deps;
-
 
 			/**
 			 * The number of rows in the matrix representing S-Polynomials.
@@ -373,7 +371,6 @@ namespace parallelGBC {
 			 * Reduce a slice of the operation set ops[i] 
 			 */
 			void pReduceRange(coeffMatrix& rs, std::vector<size_t>& prefixes, std::vector<size_t>& suffixes, size_t i, tbb::blocked_range<size_t>& range);
-
 
 			/**
 			 * This operator computes a groebner basis for the given set of 'generators' using the term ordering 'O'.

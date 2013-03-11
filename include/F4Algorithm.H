@@ -378,7 +378,7 @@ namespace parallelGBC {
 			 * is a upper bound for the parallelism and should be set to the number of available processor cores.
 			 * 'verbosity' and 'output' can be used for debugging and performance measurement.
 			 */
-			std::vector<Polynomial> operator()(std::vector<Polynomial>& generators, const TOrdering* O, CoeffField* field, int threads = 1, int verbosity = 0, std::ostream& output = std::cout);
+			std::vector<Polynomial> operator()(std::vector<Polynomial>& generators, const TOrdering* O, CoeffField* field, int threads = 1, int verbosity = 0, int reduceBlockSize = 1024, std::ostream& output = std::cout);
 	};
 
 	/**

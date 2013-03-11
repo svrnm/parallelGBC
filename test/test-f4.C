@@ -34,6 +34,7 @@
 #include <fstream>
 #include <sstream>
 #include <boost/regex.hpp> 
+#include <tbb/task_scheduler_init.h>
 
 using namespace boost;
 using namespace std;
@@ -47,7 +48,6 @@ int main(int argc, char* argv[]) {
 		cerr << "Please provide a file and a optional number of threads.\n";
 		exit(-1);
 	}
-	
 	// If the second parameter provides the number of
 	// threads, use it, if not use the default value.
 	int threads = 1;
@@ -59,10 +59,14 @@ int main(int argc, char* argv[]) {
 	if(argc > 3) {
 		istringstream( argv[3] ) >> verbosity;
 	}
-	// Yeah, one more parameter: Print the groebner basis?
+	// Print the groebner basis?
 	int printGB = 0;
 	if(argc > 4) {
 		istringstream( argv[4] ) >> printGB;
+	}
+	int blockSize = 1024;
+	if(argc > 5) {
+		istringstream( argv[5] ) >> blockSize;
 	}
 	// Read the provided input file. Example still below.
 	fstream filestr (argv[1], fstream::in);
@@ -121,7 +125,7 @@ int main(int argc, char* argv[]) {
 	// Create the f4 computer.
 	F4 f4;
 	// Compute the groebner basis for the polynomials in 'list' with 'threads' threads/processors 
-	vector<Polynomial> result = f4(list, o, cf, threads, verbosity);
+	vector<Polynomial> result = f4(list, o, cf, threads, verbosity, blockSize);
 	// Return the size of the groebner basis
 	if(printGB > 0)
 	{

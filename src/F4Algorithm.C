@@ -538,7 +538,7 @@ void F4::reduce(vector<Polynomial>& polys)
 	matrix.clear();
 }
 
-vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrdering* o, CoeffField* field, int threads, int verbosity, std::ostream& output)
+vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrdering* o, CoeffField* field, int threads, int verbosity, int reduceBlockSize, std::ostream& output)
 {
 	double start = seconds();
 	this->field = field;
@@ -546,7 +546,7 @@ vector<Polynomial> F4::operator()(vector<Polynomial>& generators, const TOrderin
 	this->O = o;
 	this->verbosity = verbosity;
 	this->out = &output;
-	this->reduceBlockSize = 1024;
+	this->reduceBlockSize = reduceBlockSize;
 
 	termCounter = 0;
 	pairs = F4PairSet( F4Pair::comparator(O) );

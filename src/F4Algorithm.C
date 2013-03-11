@@ -215,7 +215,7 @@ void F4::gauss()
 
 
 void F4::pReduceRange(coeffMatrix& rs, vector<size_t>& prefixes, vector<size_t>& suffixes, size_t i, tbb::blocked_range<size_t>& range) {
-	// Iterate ofer the given range of operations.
+	// Iterate over the given range of operations.
 	for(size_t j = range.begin(); j < range.end(); j++)
 	{
 		size_t target = ops[i].target( j );
@@ -256,8 +256,6 @@ void F4::pReduce()
 	size_t s = (( terms.size()+reduceBlockSize-1 )/ reduceBlockSize ) * reduceBlockSize;
 
 	matrix.assign(upper/2, coeffRow());
-	// Preset the 0-paddings of all rows to zero
-
 
 	for(size_t start = 0; start < s; start+=reduceBlockSize) {
 		if(start+reduceBlockSize < terms.size()) {
@@ -271,8 +269,6 @@ void F4::pReduce()
 
 		std::vector<size_t> prefixes(rs.size(), 0);
 		std::vector<size_t> suffixes(rs.size(), 0);
-		//cout << start << " - " << end << "\n";
-
 
 		tbb::parallel_for(blocked_range<size_t>(start, end), F4SetupDenseRow(*this, rs, start));
 
@@ -308,9 +304,6 @@ void F4::pReduce()
 			matrix[j].insert(matrix[j].end(), rs[i].begin(), rs[i].end()); // copy rows to matrix;
 		}
 		std::copy(savedDeps.begin(), savedDeps.end(), deps.begin());
-		/*std::fill(rs.begin(),rs.end(), coeffRow(reduceBlockSize, 0) );
-		std::fill(prefixes.begin(),prefixes.end(),0);
-		std::fill(suffixes.begin(),suffixes.end(),0);*/
 	}
 	
 	
@@ -488,13 +481,10 @@ void F4::reduce(vector<Polynomial>& polys)
 	// ELIMINATE
 	double timer = seconds();
 	pReduce();
-	
-	
 	ops.clear();
-	//timer = seconds();
-
-	empty.assign(upper/2, false); // too large, FIX?
-	//double gt = seconds();	
+	empty.assign(upper/2, false);
+	
+	*out << "PR. step (s):\t" << seconds()-timer << "\n";
 	
 	coeffRow temp;
 	// Finally sort the resulting matrix using terms. The previous intermediate matrix was not in in term ordering

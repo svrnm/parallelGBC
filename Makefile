@@ -43,7 +43,7 @@ test: library
 
 # Build the library
 library: src
-	ar rcs lib/libf4.a src/*.o
+	$(AR) rcs lib/libf4.a src/*.o
 
 # Compile all src files
 .PHONY: src

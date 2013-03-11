@@ -1,4 +1,4 @@
-Parallel Groebner Basis Computation (beta 0.5)
+Parallel Groebner Basis Computation (beta 0.7)
 
 LICENSE
 This program is free software; see LICENSE.TXT for more details
@@ -58,7 +58,8 @@ Default ist no verbosity and std::cout as output stream.
 8 - Update time
 16 - Print sugar degree during reduction step
 32 - Print time of reduction step
-64 - Print matrix size during reduction step 
+64 - Print matrix size during reduction step
+128 - Print all computed polynomials
 
 USAGE AND EXAMPLE
 If you want to use the code for your own project see test/test-f4.C as example

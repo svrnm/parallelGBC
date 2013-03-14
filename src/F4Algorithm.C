@@ -324,11 +324,16 @@ void F4::setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<si
 			if(!found)
 			{
 				size_t element = 0;
-				for(size_t k = 0; !found && k < groebnerBasis.size(); k++) 
+					degreeType d = 0;
+				for(size_t k = 0; k < groebnerBasis.size(); k++) 
 				{
 					if(inGroebnerBasis[k] && t.isDivisibleBy(groebnerBasis[k].LT())) {
-						found = true;
-						element = k;
+						degreeType d1 = t.div( groebnerBasis[k].LT() ).deg();
+						if(!found || d1 < d) {
+							found = true;
+							element = k;
+							d = d1;
+						}
 					}
 				}
 				if(found) {

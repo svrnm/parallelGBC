@@ -150,6 +150,7 @@ namespace parallelGBC {
 
 			F4DefaultReducer(F4* f4, int reduceBlockSize = 1024) : F4Reducer(f4), reduceBlockSize(reduceBlockSize) {
 				termCounter = 0;
+				upper = 0;
 				terms = std::map<Term, uint32_t, Term::comparator>( Term::comparator(f4->O, true) );
 				pivotsOrdered = std::map<Term, uint32_t, Term::comparator>( Term::comparator(f4->O, true) );
 			}

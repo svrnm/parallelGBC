@@ -182,8 +182,6 @@ namespace parallelGBC {
 	{
 		double start = F4Logger::seconds();
 
-
-
 		pairs = F4PairSet( F4Pair::comparator(O) );
 
 		tbb::task_scheduler_init init(threads);

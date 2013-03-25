@@ -61,6 +61,7 @@
  * Forward declaration of TermInstance. This class is realized in include/Term.H
  */
 class TermInstance;
+class Term;
 /**
  * Forward declaration of TOrdering. This class is realized in include/TOrderin.H
  */
@@ -174,7 +175,7 @@ class TMonoid {
 		 * Returns a pointer to the term '1'
 		 */
 		const TermInstance* getOne() const {
-			return this->one;
+			return one;
 		}
 
 		/**

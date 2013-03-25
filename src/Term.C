@@ -57,7 +57,7 @@ std::ostream& operator<< (std::ostream &out, const Term& term)
 }
 
 bool TermInstance::isDivisibleBy(const TermInstance* other) const {
-	if(other == this) { return true; }
+	if(other == this || other->degree == 0) { return true; }
 	if(other->degree > degree) { return false; }
 	for(size_t i = 0; i < owner->N; i++) {
 		if(other->indets[i] > indets[i]) return false;

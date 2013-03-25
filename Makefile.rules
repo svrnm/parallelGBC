@@ -1,4 +1,3 @@
-#
 # Makefile.rules for parallelGBC 0.5 and later
 #  
 # With this file you can configure the compilation of the tool.
@@ -19,32 +18,46 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
+#
 
 # Set your Compiler. Attention you need a compiler which supports the  C++11 standard
 CXX = /usr/bin/g++
 AR = /usr/bin/ar
-TCMALLOC = "-ltcmalloc"
+# Enable the following if you want to use google's tcmalloc
+#TCMALLOC = 
+TCMALLOC = -ltcmalloc
 
-# Configure CXXFLAGS. 
+# Configure PGBC Options
 # COEFF_BITS defines the length of the coefficents. If you need large coefficient fields
 # you should choose 32. If you want to get the most performance, you can choose 8. But
 # for most cases the default value of 16 should do it.
+PGBC_COEFF_BITS=16
 # PGBC_USE_SSE1 enables sse optimizations in the field arithmetics (currently requires GCC)
+PGBC_USE_SSE=1
 # PGBC_SORTING defines the sorting for the reduction, the behaviour only changes if this
 # value is set to one. Further sortings may follow
-# 
+PGBC_SORTING=1
+
+
+# Configure CXXFLAGS. 
 # the following CXXFLAGS are for the GNU COMPILER:
-#CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -D'PGBC_COEFF_BITS=16' -D'PGBC_SORTING=1' -std=c++0x
+#CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -std=c++0x
 # Possible FLAGS:
-CXXFLAGS = -fPIC -Wall -fopenmp -O3 -march=native -pipe -D'PGBC_COEFF_BITS=16' -D'PGBC_USE_SSE=1' -D'PGBC_SORTING=1' -std=c++0x
+CXXFLAGS = -fPIC -Wall -fopenmp -pipe -std=c++0x -march=native -O3
 # DEBUG FLAGS:
-#CXXFLAGS = -fPIC -Wall -fopenmp -pipe -D'PGBC_COEFF_BITS=16' -D'PGBC_USE_SSE=1' -D'PGBC_SORTING=1' -std=c++0x -pg -march=native -O2
+#CXXFLAGS = -fPIC -Wall -fopenmp -pipe -std=c++0x -pg -g -gdwarf-2
 
 # Where the compiled (static) library will be stored.
 LIBRARY = ../lib/libf4.a
 
-# Below you find some generic make rules ...
+### 
+# You shouldn't need to modify the following
+###
 
+# Combine compile time options with compile time optimizations
+CXXFLAGS += -D'PGBC_COEFF_BITS=$(PGBC_COEFF_BITS)' -D'PGBC_USE_SSE=$(PGBC_USE_SSE)' -D'PGBC_SORTING=$(PGBC_SORTING)'
+
+# Below you find some generic make rules ...
 dummy:
 	echo "Please use the Makefile in the main directory or specify a target"
 

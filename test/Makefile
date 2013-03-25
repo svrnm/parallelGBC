@@ -14,7 +14,7 @@
 # along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
 include	../Makefile.rules
 
-OBJ=test-f4.bin lex-f4.bin
+OBJ=test-f4.bin
 
 all: $(OBJ)
 

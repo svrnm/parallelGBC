@@ -29,14 +29,16 @@
 #include <map>
 #include <algorithm>
 #include <boost/bind.hpp>
-#include <iostream>
 #include <tbb/concurrent_unordered_map.h>
+#include <unordered_map>
 #include <tbb/concurrent_vector.h>
 #include <tbb/blocked_range.h>
 #include <tbb/atomic.h>
 #include "../include/Term.H"
 #include "../include/Polynomial.H"
 #include "../include/F4Utils.H"
+#include "../include/F4Logger.H"
+#include "../include/F4Reducer.H"
 
 namespace parallelGBC {
 
@@ -125,59 +127,10 @@ namespace parallelGBC {
 	};
 
 	/**
-	 * This class represents a container for matrix operations which can be computed in parallel. An Operation
-	 * is a triple of a target row 't', an operator row 'o' and a coefficient 'f', which means that 'o' times 'f'
-	 * should be subtracted from 't'. 
-	 */
-	struct F4Operations {
-		/**
-		 * The list of targets. A target at position i belongs to a operator and a factor at position i
-		 */
-		std::vector<int32_t> targets;
-		/**
-		 * The list of operators. A operator at position i belongs to a target and a factor at position i.
-		 */
-		std::vector<int32_t> opers;
-		/**
-		 * The list of factors. A factor at position i belongs to a operator and a coefficient at position i.
-		 */
-		coeffRow factors;
-
-		/**
-		 * Add a new operation (target,operator,factor) to the given container of operations. 
-		 */
-		void push_back(int32_t t, int32_t o, coeffType f) {
-			targets.push_back( t );
-			opers.push_back( o );
-			factors.push_back( f );
-		}
-
-		int32_t target(size_t i) {
-			return targets[i];
-		}
-
-		int32_t oper(size_t i) {
-			return opers[i];
-		}
-
-		coeffType factor(size_t i) {
-			return factors[i];
-		}
-
-		/**
-		 * Returns the size of the container which is equivalent to the number of stored operations
-		 */
-		size_t size() {
-			return targets.size();
-		}
-	};
-
-	/**
 	 * Shortname for a multiset containing F4Pairs. A multiset is used, since it possible that
 	 * two pairs have the same least common multiple.
 	 */
 	typedef std::multiset<F4Pair,F4Pair::comparator> F4PairSet;
-
 
 	/**
 	 * This class represents the F4 algorithm. It is implemented as function object, therefor you
@@ -214,163 +167,37 @@ namespace parallelGBC {
 			 * The number of computation thread
 			 */
 			int threads;
-
 			/**
 			 * The current sugar degree, which will (or has been) computed
 			 */
 			degreeType currentDegree;
-
 			/**
 			 * The set of criticial pairs which will be computed
 			 */
 			F4PairSet pairs;
-			/**
-			 * The set of terms which occure during reduction and are not leading terms
-			 */
-			std::map<Term, uint32_t, Term::comparator> terms;
-
-			/**
-			 * Intermediate storage for critical pairs which will be used for the next
-			 * reduction. For each critical pair there will be two elements in the list
-			 * rows identified by their index of the existing groebner basis and the lcm
-			 * of the two pairs. 
-			 */
-			tbb::concurrent_vector<std::pair<size_t, Term> > rows;
-			/**
-			 * The set of terms which occure during reduction and are leading terms (=pivots).
-			 * The value of the map is the row which is the pivot row.
-			 */
-			tbb::concurrent_unordered_map<Term, uint32_t, std::hash<Term> > pivots;
-			/**
-			 * A ordered copy of 'pivots'
-			 */
-			std::map<Term, uint32_t, Term::comparator> pivotsOrdered;
-			/**
-			 * Intermediate storage of the operations which have to be executed to reduce the matrix
-			 */
-			tbb::concurrent_unordered_map<Term, std::vector<std::pair<uint32_t, coeffType> >, std::hash<Term> > pivotOps;
-			/**
-			 * A unordered copy of 'terms'
-			 */
-			tbb::atomic<uint32_t> termCounter;
-			tbb::concurrent_unordered_map<Term, uint32_t, std::hash<Term> > termsUnordered;
 			
-			/**
-			 * A sparse representation of the matrix entries in the non pivot part
-			 */
-			//tbb::concurrent_unordered_map<uint32_t, tbb::concurrent_vector<std::pair<coeffType, uint32_t> > > rightSide;
-			tbb::concurrent_vector<tbb::concurrent_vector<std::pair<coeffType, uint32_t> > > rightSide;
-			
-			/**
-			 * The list of operations which have to be executed. One 'F4Operations' represents a set of operations which
-			 * will be done parallel. No two elements of ops can be done in parallel, since there are dependencies or
-			 * blocking operations.
-			 */
-			std::vector<F4Operations > ops;
-			/**
-			 * The dense representation of the matrix entries in the non pivot part. The operations of 'ops' will be executed
-			 * on this matrix
-			 */
-			coeffMatrix matrix;
-
-			/**
-			 * For each row in the coefficient matrix this vector stores the information, how many rows have to be reduced
-			 * before the given row is independent and can be used as operator.
-			 */
-			std::vector<size_t> deps;
-
-			/**
-			 * The number of rows in the matrix representing S-Polynomials.
-			 */
-			size_t upper;
-
-			size_t reduceBlockSize;
-			
-			size_t rowCount;
-
-			/**
-			 * Stores during 'gauss' for each row if the given row is empty ( only zero entries )
-			 */
-			std::vector<bool> empty;
-
-			/**
-			 * Verbosity, which can be changed during runtime, nothing which should
-			 * influence performance:
-			 *
-			 * 1 - Overall Runtime of the computation
-			 * 2 - Sum of reduction time
-			 * 4 - Sum of matrix setup/prepare time
-			 * 8 - Sum of update time
-			 * 16 - Print sugar degree during reduction step
-			 * 32 - Print time of reduction step
-			 * 64 - Print matrix size during reduction step 
-			 *
-			 * Add all debug informations to the verbosity flag of the ()-operator below, to get these
-			 * details, e.g. to get all informations use '127' and to get only statistics at the end
-			 * use '15'
-			 */
-			int verbosity;
-			/**
-			 * The output stream for the verbose messages. 
-			 */
-			std::ostream* out;
-
-			/**
-			 * Stores the time of all reduction steps
-			 */
-			double reductionTime;
-			/**
-			 * Stores the time of all matrix preparation steps
-			 */
-			double prepareTime;
-			/**
-			 * Stores the time of all critcial pairs update steps
-			 */
-			double updateTime;
-
-			/**
-			 * Parallel gaussian elemination on 'rs'. This function is called
-			 * at the end of the reduction
-			 */
-			void gauss();
-
-			/**
-			 * Parallel reduction using all operations stored in 'ops'
-			 */
-			void pReduce();
-
-			/**
-			 * Setup the reduction matrix.
-			 */
-			void prepare();
-
-			/**
-			 * Do the next reduction step based on the given critical pairs.
-			 * 'polys' will be used to store the result of the reduction step.
-			 */
-			void reduce(std::vector<Polynomial>& polys);
+			F4Logger* log;
+		
+			F4Reducer* reducer;
 
 			/**
 			 * Update the set of critical pairs using the polynomials 'polys',
 			 * which are the new candidates for elements of the groebner basis.
 			 */
 			void updatePairs(std::vector<Polynomial>& polys, bool initial = false);
-	
-			/**
-			 * Process a S-Polynomial (ir*current) and do the symbolic preprocessing by adding required
-			 * reduction polynomials to the matrix
-			 */
-			void setupRow(Polynomial& current, Term& ir, size_t i, tbb::blocked_range<size_t>& range);
 
-			/**
-			 * Convert the non pivot part of the matrix from sparse ('rightSide') to dense ('rs') representation
-			 */
-			void setupDenseRow(coeffMatrix& rs, size_t offset, tbb::blocked_range<size_t>& range);
-			
-			/**
-			 * Reduce a slice of the operation set ops[i] 
-			 */
-			void pReduceRange(coeffMatrix& rs, std::vector<size_t>& prefixes, std::vector<size_t>& suffixes, size_t i, tbb::blocked_range<size_t>& range);
+			void reduce(std::vector<Polynomial>& polys);
+
+			void setReducer(F4Reducer* reducer) {
+				this->reducer = reducer;
+			}
+
+			F4(const TOrdering* O, CoeffField* field, int threads = 1, int verbosity = 0, std::ostream& output = std::cout) : O(O), field(field), threads(threads), log(new F4Logger(verbosity, &output)) {
+			}
+
+			~F4() {
+				delete log;
+			}
 
 			/**
 			 * This operator computes a groebner basis for the given set of 'generators' using the term ordering 'O'.
@@ -378,105 +205,7 @@ namespace parallelGBC {
 			 * is a upper bound for the parallelism and should be set to the number of available processor cores.
 			 * 'verbosity' and 'output' can be used for debugging and performance measurement.
 			 */
-			std::vector<Polynomial> operator()(std::vector<Polynomial>& generators, const TOrdering* O, CoeffField* field, int threads = 1, int verbosity = 0, int reduceBlockSize = 1024, std::ostream& output = std::cout);
-	};
-
-	/**
-	 * Helper class for parallel matrix setup. Will be used by tbb::parallel_for().
-	 * The operator() is just a callback for the setupRow() function of the class F4
-	 */
-	struct F4SetupRow
-	{
-		/**
-		 * The used instance of the F4 algorithm
-		 */
-		F4& f4;
-		
-		/**
-		 * the polynomial which will be used to compute the S-Polynomial (current*ir)
-		 */
-		Polynomial& current;
-		/**
-		 * the term which will be used to compute the S-polynomial (current*ir)
-		 */
-		
-		Term& ir;
-		/**
-		 * The index of the current row of the coefficient matrix
-		 */
-		size_t i;
-
-		/**
-		 * Construct a new instance of F4SetupRow.
-		 */
-		F4SetupRow(F4& f4, Polynomial& current, Term& ir, size_t i) : f4(f4), current(current), ir(ir), i(i) {}
-
-		/**
-		 * Call back the setupRow function of the given f4 instance.
-		 */
-		void operator() (tbb::blocked_range<size_t>& range) const
-		{
-			f4.setupRow(current, ir, i, range);
-		}
-	};
-
-	/**
-	 * Helper class for parallel matrix setup. Will be used by tb::parallel_for()
-	 * The operator() is just a callback for the setupDenseRow() function of the class f4
-	 */
-	struct F4SetupDenseRow {
-		/**
-		 * The used instance of the F4 algorithm
-		 */
-		F4& f4;
-		coeffMatrix& rs;
-		size_t offset;
-
-		/**
-		 * Construct a new instance of F4SetupDenseRow
-		 */
-		F4SetupDenseRow(F4& f4, coeffMatrix& rs, size_t offset) : f4(f4), rs(rs), offset(offset) {}
-
-		/**
-		 * Call back the setupDenseRow function of the given f4 instance
-		 */
-		void operator() (tbb::blocked_range<size_t>& range) const
-		{
-			f4.setupDenseRow(rs, offset, range);
-		}
-	};
-
-	/**
-	 * Helper class for parallel matrix reduction. Will be used by tbb:parallel_for()
-	 * The operator() is just a callback for the pReduceRange() function of the class f4
-	 */
-	struct F4PReduceRange
-	{
-		/**
-		 * The used instance of the F4 algorithm
-		 */
-		F4& f4;
-		coeffMatrix& rs;
-		std::vector<size_t>& prefixes;
-		std::vector<size_t>& suffixes;
-	
-		/**
-		 * The index for the current set of operations (f4.ops[i])
-		 */
-		size_t i;
-
-		/**
-		 * Construct a new instance of F4PReduceRange
-		 */
-		F4PReduceRange(F4& f4, coeffMatrix& rs, std::vector<size_t>& prefixes, std::vector<size_t>& suffixes, size_t i) : f4(f4), rs(rs), prefixes(prefixes), suffixes(suffixes), i(i) {}
-
-		/**
-		 * Call back the pReduceRange function of the given f4 instance
-		 */
-		void operator() (tbb::blocked_range<size_t>& range) const
-		{
-			f4.pReduceRange(rs, prefixes, suffixes, i, range);
-		}
+			std::vector<Polynomial> compute(std::vector<Polynomial>& generators);
 	};
 }
 #endif

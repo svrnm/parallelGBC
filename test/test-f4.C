@@ -104,17 +104,7 @@ int main(int argc, char* argv[]) {
 	CoeffField* cf = new CoeffField(32003);
 	// 4. Read in the polynomials from string 't'. The second parameter is the power product monoid.
 	vector<Polynomial> list = Polynomial::createList(t, m);
-	/*for(size_t i = 0; i < list.size(); i++) {
-		if(i > 0) {
-			cout << ", ";
-		}
-		cout << list[i];
-	}
-	cout << "\n";
-
-	exit(-1);
-*/
-
+	
 	// 5. Before you can compute the groebner basis, you have to order your polynomials by term
 	// ordering and have to bring in the coefficients to your coefficient field. Finally you have
 	// to normalize your polynomials. Remark: This step will be merged into f4(...) in a later release,
@@ -123,9 +113,13 @@ int main(int argc, char* argv[]) {
 	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::bringIn), _1, cf, false));
 
 	// Create the f4 computer.
-	F4 f4;
+	F4 f4(o, cf, threads, verbosity);
+	f4.setReducer(new F4DefaultReducer(&f4, blockSize));
 	// Compute the groebner basis for the polynomials in 'list' with 'threads' threads/processors 
-	vector<Polynomial> result = f4(list, o, cf, threads, verbosity, blockSize);
+	if(verbosity & 1) {
+		std::cout << "Parameters: " << threads << " threads, " << blockSize << " block size\n";
+	}
+	vector<Polynomial> result = f4.compute(list);
 	// Return the size of the groebner basis
 	if(printGB > 0)
 	{

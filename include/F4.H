@@ -28,4 +28,6 @@
 #include "Term.H"
 #include "Polynomial.H"
 #include "F4Algorithm.H"
+#include "F4Reducer.H"
+#include "F4DefaultReducer.H"
 #endif

@@ -44,6 +44,10 @@ class TermInstance {
 			return (degreeType*)malloc(owner->N*sizeof(degreeType));
 		}
 
+		degreeType* alloc(size_t N) {
+			return (degreeType*)malloc(N*sizeof(degreeType));
+		}
+
 		void setDegree() {
 			degree = indets[0];
 			for(size_t k = 1; k < owner->N; k++) {
@@ -61,6 +65,9 @@ class TermInstance {
 			this->indets[i] = value;
 		}
 
+		TermInstance(TMonoid* const m, size_t N) : owner(m) {
+			indets = this->alloc(N);
+		}
 	public:
 		TermInstance(TMonoid* const m) : owner(m) {
 			indets = this->alloc();
@@ -160,6 +167,17 @@ class TermInstance {
 			return owner->createElement(result);
 		}
 
+		const TermInstance* divX(size_t i) const {
+			TermInstance* result = new TermInstance(owner);
+			for(size_t j = 0; j < owner->N; j++) {
+				result->indets[j] = indets[j];
+			}
+			result->indets[i]--;
+			result->setDegree();
+			result->setHash();
+			return owner->createElement(result);
+		}
+
 		bool equal(const TermInstance* other) const {
 			for(size_t i = 0; i < owner->N; i++) {
 				if(other->indets[i] != indets[i]) return false;
@@ -181,6 +199,7 @@ class Term {
 		Term(TMonoid* owner, const std::vector<degreeType>& i) : instance(owner->createElement(i)) { }
 		Term(TMonoid* owner, const std::string& s, degreeType min) : instance(owner->createElement(s, min)) { }
 		Term() {}
+
 
 		degreeType operator[](size_t i) const {
 			return instance->at(i);
@@ -212,6 +231,20 @@ class Term {
 
 		Term div(const Term& other) const {
 			return Term(instance->monoid(), instance->div(other.instance));
+		}
+
+		Term divX(size_t i) const {
+			return Term(instance->monoid(), instance->divX(i));
+		}
+
+		std::vector<Term> divAllX() const {
+			std::vector<Term> result;
+			for(size_t i = 0; i < instance->monoid()->N; i++) {
+				if(instance->at(i) > 0) {
+					result.push_back( this->divX(i) );
+				}
+			}
+			return result;
 		}
 
 		bool equal(const Term& other) const {
@@ -255,6 +288,10 @@ class Term {
 
 		std::string str() const {
 			return instance->str();
+		}
+
+		Term getOne() {
+			return Term(instance->monoid(), instance->monoid()->getOne());
 		}
 
 		std::vector<degreeType> getValues() {

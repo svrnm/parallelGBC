@@ -39,10 +39,14 @@ Testing
 -------
 Compute the degree reverse lexicogrpahic gröbner basis of cyclic-8 with 4 threads
 and a lot of verbosity and without printing the groebner basis. The block size of
-the matrix is 1024.
+the matrix is 1024. For computation the simplify algorithm is not used, the sugar
+cube selection strategy is.
 
-    cd test/;
-    ./test/test-f4 ../input/cyclic8.txt 4 127 0 1024
+    ./test/test-f4 ../input/cyclic8.txt 4 127 0 1024 0 1
+
+In general you can compute with this binary using the following parameters:
+
+    ./test/test-f4 <input-file> <processors> <verbosity> <printGB> <blocksize> <doSimplify> <withSugar>
 
 Checking functionality
 ----------------------
@@ -78,7 +82,7 @@ Default ist no verbosity and std::cout as output stream.
 
 Usage and example
 -----------------
-If you want to use the code for your own project see test/test-f4.C as example
+If you want to use the code for your own project see test/test-f4.C as example.
 
 Contact
 -------

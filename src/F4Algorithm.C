@@ -155,26 +155,36 @@ namespace parallelGBC {
 		log->updateTime += F4Logger::seconds() - timer;
 	}
 
-	void F4::reduce(vector<Polynomial>& polys) {
 
+	void F4::select() {
 		std::vector<std::pair<size_t, Term> > selectedPairs;
 
 		vector<F4Pair> tmp(pairs.begin(), pairs.end());
-		sort(tmp.begin(), tmp.end(), F4Pair::sugarComparator());
-		currentDegree = tmp.begin()->sugar;
+		
+		if(withSugar) {
+			sort(tmp.begin(), tmp.end(), F4Pair::sugarComparator());
+			currentDegree = tmp.begin()->sugar;
+		} else {
+			sort(tmp.begin(), tmp.end(), F4Pair::comparator(O));
+			currentDegree = tmp.begin()->LCM.deg();
+		}
 		if(log->verbosity & 16) {
-			*(log->out) << "Sugar degree:\t" <<currentDegree << "\n";
+			*(log->out) << "Degree:\t" <<currentDegree << "\n";
 		}
 
 		size_t index = 0;
-		for(; index < tmp.size() && tmp[index].sugar == currentDegree; index++)
-		{
-			reducer->addSPolynomial(tmp[index].i, tmp[index].j, tmp[index].LCM);
+		if(withSugar) {
+			for(; index < tmp.size() && tmp[index].sugar == currentDegree; index++) { reducer->addSPolynomial(tmp[index].i, tmp[index].j, tmp[index].LCM); }
+		} else {
+			for(; index < tmp.size() && tmp[index].LCM.deg() == currentDegree; index++) { reducer->addSPolynomial(tmp[index].i, tmp[index].j, tmp[index].LCM); }
 		}
 		pairs.clear();
 		pairs.insert(tmp.begin() + index, tmp.end());
 		tmp.clear();
+	}
 
+	
+	void F4::reduce(vector<Polynomial>& polys) {
 		reducer->reduce(polys, currentDegree);
 	}
 
@@ -194,11 +204,12 @@ namespace parallelGBC {
 		updatePairs(generators, true);
 
 		if(this->reducer == 0) {
-			this->reducer = new F4DefaultReducer(this, 1024);
+			this->reducer = new F4DefaultReducer(this, false, 1024);
 		}
 		
 		while( !pairs.empty() ) {
 			vector<Polynomial> polys;
+			select();
 			reduce(polys);
 			if(!polys.empty()) {
 				updatePairs(polys, false);

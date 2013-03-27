@@ -30,8 +30,8 @@
 #include "../include/Term.H"
 #include "../include/Polynomial.H"
 #include "../include/F4Reducer.H"
-#include "../include/F4Logger.H"
 #include "../include/F4Algorithm.H"
+#include "../include/F4Simplify.H"
 
 namespace parallelGBC {
 
@@ -82,8 +82,13 @@ namespace parallelGBC {
 
 	class F4DefaultReducer : public virtual F4Reducer {
 		public:
+			bool doSimplify;
 			size_t reduceBlockSize;
-			std::vector<std::pair<size_t, Term> > rowOrigin;
+
+			F4Simplify* simplify;
+
+			std::vector<std::pair<Term, Polynomial> > rowOrigin;
+			tbb::concurrent_vector<tbb::concurrent_vector<std::pair<uint32_t, coeffType> > > savedRows; 
 			std::vector<uint32_t> termMapping;
 
 			/**
@@ -148,11 +153,18 @@ namespace parallelGBC {
 			 */
 			std::vector<bool> empty;
 
-			F4DefaultReducer(F4* f4, int reduceBlockSize = 1024) : F4Reducer(f4), reduceBlockSize(reduceBlockSize) {
+			F4DefaultReducer(F4* f4, bool doSimplify = false, int reduceBlockSize = 1024) : F4Reducer(f4), doSimplify(doSimplify), reduceBlockSize(reduceBlockSize) {
 				termCounter = 0;
 				upper = 0;
 				terms = std::map<Term, uint32_t, Term::comparator>( Term::comparator(f4->O, true) );
 				pivotsOrdered = std::map<Term, uint32_t, Term::comparator>( Term::comparator(f4->O, true) );
+				if(doSimplify) {
+					simplify = new F4Simplify();
+				}
+			}
+
+			~F4DefaultReducer() {
+				delete simplify;
 			}
 
 

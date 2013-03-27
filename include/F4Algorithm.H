@@ -163,6 +163,9 @@ namespace parallelGBC {
 			 * The used coefficient fiel
 			 */
 			CoeffField* field;
+
+			bool withSugar;
+
 			/**
 			 * The number of computation thread
 			 */
@@ -186,13 +189,15 @@ namespace parallelGBC {
 			 */
 			void updatePairs(std::vector<Polynomial>& polys, bool initial = false);
 
+			void select();
+			
 			void reduce(std::vector<Polynomial>& polys);
 
 			void setReducer(F4Reducer* reducer) {
 				this->reducer = reducer;
 			}
 
-			F4(const TOrdering* O, CoeffField* field, int threads = 1, int verbosity = 0, std::ostream& output = std::cout) : O(O), field(field), threads(threads), log(new F4Logger(verbosity, &output)) {
+			F4(const TOrdering* O, CoeffField* field, bool withSugar = true, int threads = 1, int verbosity = 0, std::ostream& output = std::cout) : O(O), field(field), withSugar(withSugar), threads(threads), log(new F4Logger(verbosity, &output)) {
 			}
 
 			~F4() {

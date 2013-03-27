@@ -68,6 +68,14 @@ int main(int argc, char* argv[]) {
 	if(argc > 5) {
 		istringstream( argv[5] ) >> blockSize;
 	}
+	bool doSimplify = false;
+	if(argc > 6) {
+	        istringstream( argv[6] ) >> doSimplify;
+	}
+	bool withSugar = true;
+	if(argc > 7) {
+		istringstream( argv[7] ) >> withSugar;
+	}
 	// Read the provided input file. Example still below.
 	fstream filestr (argv[1], fstream::in);
 	std::string s,t;
@@ -113,11 +121,11 @@ int main(int argc, char* argv[]) {
 	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::bringIn), _1, cf, false));
 
 	// Create the f4 computer.
-	F4 f4(o, cf, threads, verbosity);
-	f4.setReducer(new F4DefaultReducer(&f4, blockSize));
+	F4 f4(o, cf, withSugar, threads, verbosity);
+	f4.setReducer(new F4DefaultReducer(&f4, doSimplify, blockSize));
 	// Compute the groebner basis for the polynomials in 'list' with 'threads' threads/processors 
 	if(verbosity & 1) {
-		std::cout << "Parameters: " << threads << " threads, " << blockSize << " block size\n";
+		std::cout << "Parameters: " << threads << " threads, " << blockSize << " block size, " << "with" << (doSimplify ? "" : "out") << " simplify, with" << (withSugar ? "": "out") << " sugar\n";
 	}
 	vector<Polynomial> result = f4.compute(list);
 	// Return the size of the groebner basis

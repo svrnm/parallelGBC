@@ -1,4 +1,4 @@
-Parallel Groebner Basis Computation (beta 0.7)
+Parallel Groebner Basis Computation (beta 0.8)
 =======
 
 License

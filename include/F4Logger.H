@@ -62,7 +62,11 @@ namespace parallelGBC {
 			 */
 			double updateTime;
 
-			F4Logger(int verbosity, std::ostream* out) : verbosity(verbosity), out(out) {}
+			F4Logger(int verbosity, std::ostream* out) : verbosity(verbosity), out(out) {
+				reductionTime = 0;
+				prepareTime = 0;
+				updateTime = 0;
+			}
 
 			static double seconds()
 			{    

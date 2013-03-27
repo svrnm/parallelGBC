@@ -275,7 +275,7 @@ class CoeffField
 		 * The implementation is given in src/CoeffField.C and might be different if SSE is 
 		 * enabled at compile time
 		 */
-		void mulSub(coeffRow& t, coeffRow& o, coeffType c, size_t prefix, size_t suffix) const {
+		virtual void mulSub(coeffRow& t, coeffRow& o, coeffType c, size_t prefix, size_t suffix) const {
 
 			// Check if SSE is enabled at compile time
 #if PGBC_USE_SSE == 1

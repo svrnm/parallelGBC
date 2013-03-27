@@ -72,7 +72,7 @@ ostream& operator<< (ostream& out, const vector<Polynomial> &polys)
 	return out;
 }
 
-Polynomial::Polynomial(coeffRow& cs, std::vector<Term>& ts)
+Polynomial::Polynomial(coeffRow& cs, std::vector<Term>& ts) 
 {
 	if(ts.size() > 0) {
 		sugarDegree = ts[0].deg();
@@ -89,7 +89,7 @@ Polynomial::Polynomial(coeffRow& cs, std::vector<Term>& ts)
 	coeffs = cs;
 }
 
-Polynomial::Polynomial(std::vector<Monomial>& ms)
+Polynomial::Polynomial(std::vector<Monomial>& ms) 
 {
 	if(ms.size() > 0)
 	{
@@ -105,13 +105,14 @@ Polynomial::Polynomial(std::vector<Monomial>& ms)
 	}
 }
 
-Polynomial::Polynomial(const Term& t) {
+Polynomial::Polynomial(const Term& t) 
+{
 	terms.push_back(t);
 	coeffs.push_back(1);
 	sugarDegree = t.deg();
 }
 
-Polynomial::Polynomial(std::vector<Monomial>& ms, bool purify)
+Polynomial::Polynomial(std::vector<Monomial>& ms, bool purify) 
 {
 	if(ms.size() > 0)
 	{

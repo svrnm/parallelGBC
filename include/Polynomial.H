@@ -65,12 +65,13 @@ class Polynomial {
 		 */
 		degreeType sugarDegree;
 
+
 	public:
 		/**
 		 * Constructs a empty polynomial with sugar degree s. The elements of the polynomial
 		 * can be pushed afterwards using the push_back(...) method.
 		 */
-		Polynomial(degreeType s) : sugarDegree(s) { }
+		Polynomial(degreeType s) : sugarDegree(s)  { }
 
 		/**
 		 * Construct an empty polynomial with sugar degree zero (which is equal to the 0-polynomial)
@@ -258,6 +259,18 @@ class Polynomial {
 			return terms;
 		}
 
+		bool operator== (const Polynomial& other) const {
+			if(size() != other.size()) {
+				return false;
+			}
+			for(size_t i = 0; i < terms.size(); i++) {
+				if(terms[i] != other.terms[i] || coeffs[i] != other.coeffs[i]) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 		/**
 		 * A polynomial comparator. The comparator compares the leading terms of two
 		 * given polynomials using the given term ordering 'O'. The flag 'gt' can be
@@ -324,5 +337,4 @@ class MonomialComparator {
 		 */
 		bool operator() (const Monomial& lhs, const Monomial& rhs) const;
 };
-
 #endif

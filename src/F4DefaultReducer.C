@@ -54,6 +54,7 @@ namespace parallelGBC {
 				// We need a helper row, which stores the logarithms of all entries in
 				// the current row matrix[i] since the mulSub operation expects that the 
 				// operator row is given by the logarithms of the entries.
+				newPivots.push_back(make_pair(p,i));
 				coeffRow logRow(matrix[i].size(), 0);
 				// Normalize the entries of matrix[i] if factor is not 1
 				if(factor != 1) {
@@ -244,12 +245,7 @@ namespace parallelGBC {
 				Polynomial current = f4->groebnerBasis[ rows[i].first ];
 				Term ir = rows[i].second.div(current.LT());
 				if(doSimplify) {
-					std::pair<Term, Polynomial> s = simplify->search(ir, current);
-					if(s.first != ir) {
-//						std::cout << "Rewriting:\t" << ir << "<-" << s.first << " AND " << current << "<-" << s.second << "\n";
-						ir = s.first;
-						current = s.second;
-					}   
+					simplify->search(ir, current);
 				} 
 				rowOrigin.push_back( make_pair( ir,current ) );
 				rightSide.grow_to_at_least( termsUnordered.size() + current.size() );
@@ -403,27 +399,45 @@ namespace parallelGBC {
 			}
 
 
+			timer = F4Logger::seconds();
 			if(doSimplify) {
-				simplify->grow(currentDegree);
 				#pragma omp parallel for num_threads ( f4->threads )
 				for(size_t i = 0; i < savedRows.size(); i++) {
 					if(!savedRows[i].empty()) {
 						Polynomial p(currentDegree);
-						std::unordered_map<uint32_t, coeffType> tmp(savedRows[i].begin(), savedRows[i].end());
+						//std::unordered_map<uint32_t, coeffType> tmp(savedRows[i].begin(), savedRows[i].end());
+						std::vector<coeffType> tmp(terms.size(), 0);
+						for(size_t j = 0; j < savedRows[i].size(); j++) {
+							tmp[termMapping[ savedRows[i][j].first  ]] = savedRows[i][j].second;
+						}
+
+						// POST Reduce
+/*						for(size_t k = 0; k < newPivots.size(); k++) {
+							uint32_t pivot = newPivots[k].first;
+							uint32_t index = newPivots[k].second;
+							if(tmp[pivot] != 0) {
+								coeffRow logRow(matrix[index].size(), 0);
+								for(size_t j = pivot; j < matrix[index].size(); j++) {
+									logRow[j] = f4->field->getFactor(matrix[index][j]);
+								}
+								size_t prefix = (pivot/f4->field->pad)*f4->field->pad;
+								f4->field->mulSub(tmp, logRow, tmp[pivot], prefix, tmp.size());
+							}
+						}*/
+
 						p.push_back(1, rowOrigin[i].second.LT().mul(rowOrigin[i].first));
-						size_t c = 0;
-						for(map<Term, uint32_t, Term::comparator>::iterator it = terms.begin(); it != terms.end() && c < tmp.size(); it++) {
-							if(tmp[it->second] != 0) {
-								p.push_back(tmp[it->second], it->first);
-								c++;
+						size_t j = 0;
+						for(map<Term, uint32_t, Term::comparator>::iterator it = terms.begin(); it != terms.end(); it++, j++) {
+							if(tmp[j] != 0) { 
+								p.push_back(tmp[j], it->first); 
 							}
 						}
-						simplify->insert(currentDegree, rowOrigin[i].first, rowOrigin[i].second, p);
+						simplify->insert(rowOrigin[i].first, rowOrigin[i].second, p);
 					}
 				}
 			}
+			f4->log->simplifyTime += F4Logger::seconds()-timer;
 
-			timer = F4Logger::seconds();
 			// Reset matrix.
 			rowOrigin.clear();
 			empty.clear();
@@ -431,11 +445,12 @@ namespace parallelGBC {
 			matrix.clear();
 			rightSide.clear();
 			upper = 0;
+			newPivots.clear();
 
-			if(doSimplify) {
+			/*if(doSimplify) {
 				std::cout << simplify->hits << " Hits\n";
 				std::cout << simplify->misses << " Misses\n";
-			}
+			}*/
 		}
 
 		void F4DefaultReducer::addSPolynomial(size_t i, size_t j, Term& lcm) {

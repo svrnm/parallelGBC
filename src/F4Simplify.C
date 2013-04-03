@@ -17,56 +17,52 @@
 #include "../include/F4Simplify.H"
 namespace parallelGBC {
 
-	
 
-	std::pair<Term, Polynomial> F4Simplify::search(Term& t, Polynomial& f) {
-		std::vector<degreeType> degree = t.getValues();
-		std::vector<degreeType> helper(degree.size(), 0);
-		bool check = true;
-		while(check) {
-			Term x(t.monoid(), helper);
-			Term u = t.div ( x );
-			for(size_t k = 0; k < F.size(); k++) {
-				size_t j = F.size() - 1 - k;
-				tbb::concurrent_unordered_map< Term, tbb::concurrent_vector<std::pair<Polynomial, Polynomial> > >::iterator it = F[j].find( u );
-				if(it != F[j].end()) {
-					for(size_t k = 0; k < it->second.size(); k++) {
-						if(it->second[k].first == f) {
-							Polynomial p = it->second[k].second;
-							hits++;
-							if( u.deg() == 0) {
-								return std::make_pair( t, p );
-							} else if( u.equal(t) ) {
-								return std::make_pair( t.getOne(), p );
-							} else {
-								return search(x, p);
-							}
+
+	//	std::pair<Term, Polynomial> 
+	void F4Simplify::search(Term& t, Polynomial& f) {
+		tbb::concurrent_unordered_map<Polynomial, tbb::concurrent_unordered_map<Term, Polynomial, std::hash<Term> > >::iterator it = F.find( f );
+		if(it != F.end()) {
+			std::vector<degreeType> degree = t.getValues();
+			std::vector<degreeType> helper(degree.size(), 0);
+			bool check = true;
+			while(check) {
+				Term x(t.monoid(), helper);
+				Term u = t.div ( x );
+				tbb::concurrent_unordered_map<Term, Polynomial>::iterator it2 = it->second.find( u );
+				if(it2 != it->second.end()) {
+					f = it2->second;
+					if( u.deg() == 0) {
+						return;
+					} else if( u.equal(t) ) {
+						t = t.getOne();
+						return;
+					} else {
+						t = x;
+						return search(t, f);
+					}
+				}
+
+				if(u.equal(t)) { 
+					check = false; 
+				} else {
+					for(size_t j = 0; j < helper.size(); j++) {
+						helper[j]++;
+						if(helper[j] > degree[j]) {
+							helper[j] = 0;
+						} else {
+							break;
 						}
 					}
 				}
 			}
-
-			if(u.equal(t)) { 
-				check = false; 
-			} else {
-				for(size_t i = 0; i < helper.size(); i++) {
-					size_t j = helper.size() - 1 - i;
-					helper[j]++;
-					if(helper[j] > degree[j]) {
-						helper[j] = 0;
-					} else {
-						break;
-					}
-				}
-			}
 		}
-		misses++;
-		return std::make_pair(t,f);
+		//return std::make_pair(t,f);
 	}
 
 
-	void F4Simplify::insert(size_t j, Term& t, Polynomial& f, Polynomial& p)  {
-		if(f.size() >= p.size()) { return; }
-		F[j][t].push_back(std::make_pair(f, p));
+	void F4Simplify::insert(Term& t, Polynomial& f, Polynomial& p)  {
+		if(f == p) { return; }
+		F[f][t] = p;
 	}
 }

@@ -61,11 +61,16 @@ namespace parallelGBC {
 			 * Stores the time of all critcial pairs update steps
 			 */
 			double updateTime;
+			/**
+			 *
+			 */
+			double simplifyTime;
 
 			F4Logger(int verbosity, std::ostream* out) : verbosity(verbosity), out(out) {
 				reductionTime = 0;
 				prepareTime = 0;
 				updateTime = 0;
+				simplifyTime = 0;
 			}
 
 			static double seconds()

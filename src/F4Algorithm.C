@@ -221,6 +221,7 @@ namespace parallelGBC {
 		}
 		if(log->verbosity & 4) {
 			*(log->out) << "Prepare (s): \t" << log->prepareTime << "\n";
+			*(log->out) << "Simplify (s): \t" << log->simplifyTime << "\n";
 		}
 		if(log->verbosity & 8) {
 			*(log->out) << "Update (s): \t" << log->updateTime << "\n";

@@ -85,6 +85,8 @@ namespace parallelGBC {
 			bool doSimplify;
 			size_t reduceBlockSize;
 
+			std::vector<std::pair<uint32_t, uint32_t> > newPivots;
+
 			F4Simplify* simplify;
 
 			std::vector<std::pair<Term, Polynomial> > rowOrigin;

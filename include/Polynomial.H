@@ -153,6 +153,15 @@ class Polynomial {
 			return coeffs.size();
 		}
 
+		size_t hash() const {
+			std::hash<Term> hasher;
+			size_t hash = 0;
+			for(size_t i = 0; i < size(); i++) {
+				hash ^= coeffs[i] + hasher(terms[i]); // + 0x9e3779b9 + (hash << 6) + (hash >> 2);		
+			}
+			return hash;
+		}
+
 		/**
 		 * Multiply all terms of the polynomial with the given term 't' and return a new polynomial.
 		 * The result is for a polynomial 'p' the new polynomial 'p*t'.
@@ -337,4 +346,19 @@ class MonomialComparator {
 		 */
 		bool operator() (const Monomial& lhs, const Monomial& rhs) const;
 };
+
+namespace std
+{    
+   template <>
+   struct hash<Polynomial> : public unary_function<Polynomial, size_t>
+   {
+       size_t operator()(const Polynomial& p) const
+       {
+					return p.hash();
+       }
+   };
+}
+
+
+
 #endif

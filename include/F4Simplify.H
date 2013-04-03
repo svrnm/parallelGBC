@@ -33,23 +33,13 @@ namespace parallelGBC {
 
 
 		public:
-			std::vector< tbb::concurrent_unordered_map<Term, tbb::concurrent_vector<std::pair<Polynomial, Polynomial> >, std::hash<Term> > > F;
+			tbb::concurrent_unordered_map<Polynomial, tbb::concurrent_unordered_map<Term, Polynomial, std::hash<Term> >, std::hash<Polynomial> > F;
 
-			size_t hits;
-			size_t misses;
+			F4Simplify() { }
 
-			F4Simplify() {
-				hits = 0;
-				misses = 0;
-			}
+			void search(Term& t, Polynomial& f);
 
-			void grow(size_t j) {
-				F.resize( j+1, tbb::concurrent_unordered_map<Term, tbb::concurrent_vector<std::pair<Polynomial, Polynomial> >, std::hash<Term> >());
-			}
-		
-			std::pair<Term, Polynomial> search(Term& t, Polynomial& f);
-
-			void insert(size_t j, Term& t, Polynomial& f, Polynomial& p);
+			void insert(Term& t, Polynomial& f, Polynomial& p);
 	};
 }
 #endif

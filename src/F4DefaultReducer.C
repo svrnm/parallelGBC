@@ -97,8 +97,7 @@ namespace parallelGBC {
 		suffix = ( (suffix+f4->field->pad)/f4->field->pad )*f4->field->pad;
 		for(size_t j = prefix; j < suffix; j++) {
 			if(row[j] != 0) {
-				//rightSide[ j ].push_back( make_pair(row[j], index) );
-				if(doSimplify) {
+				if(doSimplify > 0) {
 					savedRows[index].push_back( make_pair(j + offset, row[j]) );
 				}
 				row[j] = f4->field->getFactor(row[j]);
@@ -244,10 +243,17 @@ namespace parallelGBC {
 			{
 				Polynomial current = f4->groebnerBasis[ rows[i].first ];
 				Term ir = rows[i].second.div(current.LT());
-				if(doSimplify) {
-					simplify->search(ir, current);
+				if(doSimplify == 2) {
+					rowOriginDB.push_back( make_pair( rows[i].first, ir ) );
+					std::pair<Term, Polynomial> s = simplifyDB->search(rows[i].first, ir);
+					if(s.first != ir) {
+						ir = s.first;
+						current = s.second;
+					} 
+				} else if(doSimplify == 1) {
+						simplify->search(ir, current);
+						rowOrigin.push_back( make_pair( ir,current ) );
 				} 
-				rowOrigin.push_back( make_pair( ir,current ) );
 				rightSide.grow_to_at_least( termsUnordered.size() + current.size() );
 				tbb::parallel_for(blocked_range<size_t>((i > upper || i % 2 == 0 ? 1 : 0), current.size()), F4SetupRow(*this, current, ir, i));
 			}
@@ -323,9 +329,9 @@ namespace parallelGBC {
 			pivotsOrdered.clear();
 			ops.pop_back();
 
-			if(doSimplify) {
-	              		savedRows.assign(rowCount, tbb::concurrent_vector<std::pair<uint32_t, coeffType> >());
-		        }
+			if(doSimplify > 0) {
+				savedRows.assign(rowCount, tbb::concurrent_vector<std::pair<uint32_t, coeffType> >());
+      }
 
 			f4->log->prepareTime += F4Logger::seconds() - timer;
 		}
@@ -374,6 +380,9 @@ namespace parallelGBC {
 			if(f4->log->verbosity & 32) {
 				*(f4->log->out) << "Red. step (s):\t" << F4Logger::seconds()-timer << "\n";
 			}
+
+			size_t t = f4->groebnerBasis.size();
+
 			for(size_t i = 0; i < upper/2; i++)
 			{
 				if(!empty[i])
@@ -392,6 +401,11 @@ namespace parallelGBC {
 						*(f4->log->out) << p << "\n";
 					}
 					polys.push_back( p );
+					Term one = p.LT().getOne();
+					if(doSimplify == 2) {
+						simplifyDB->insert(t, one, p); // this breaks the independency from Reducer and Algorithm...
+					}
+					t++;
 				}
 			}
 			if(f4->log->verbosity & 64) {
@@ -400,19 +414,19 @@ namespace parallelGBC {
 
 
 			timer = F4Logger::seconds();
-			if(doSimplify) {
+			if(doSimplify == 2) {
 				#pragma omp parallel for num_threads ( f4->threads )
-				for(size_t i = 0; i < savedRows.size(); i++) {
-					if(!savedRows[i].empty()) {
-						Polynomial p(currentDegree);
-						//std::unordered_map<uint32_t, coeffType> tmp(savedRows[i].begin(), savedRows[i].end());
+        for(size_t i = 0; i < savedRows.size(); i++) {
+          if(!savedRows[i].empty() && simplifyDB->check(rowOriginDB[i].first, rowOriginDB[i].second) > savedRows[i].size()) {
+            Polynomial p(currentDegree);
 						std::vector<coeffType> tmp(terms.size(), 0);
 						for(size_t j = 0; j < savedRows[i].size(); j++) {
 							tmp[termMapping[ savedRows[i][j].first  ]] = savedRows[i][j].second;
 						}
 
 						// POST Reduce
-/*						for(size_t k = 0; k < newPivots.size(); k++) {
+#if PGBC_POST_REDUCE == 1
+						for(size_t k = 0; k < newPivots.size(); k++) {
 							uint32_t pivot = newPivots[k].first;
 							uint32_t index = newPivots[k].second;
 							if(tmp[pivot] != 0) {
@@ -423,7 +437,46 @@ namespace parallelGBC {
 								size_t prefix = (pivot/f4->field->pad)*f4->field->pad;
 								f4->field->mulSub(tmp, logRow, tmp[pivot], prefix, tmp.size());
 							}
-						}*/
+						}
+#endif
+
+
+
+            p.push_back(1, f4->groebnerBasis[ rowOriginDB[i].first ].LT().mul(rowOriginDB[i].second)); 
+						size_t j = 0;
+						for(map<Term, uint32_t, Term::comparator>::iterator it = terms.begin(); it != terms.end(); it++, j++) {
+							if(tmp[j] != 0) { 
+								p.push_back(tmp[j], it->first); 
+							}
+						}
+
+            simplifyDB->insert(rowOriginDB[i].first, rowOriginDB[i].second, p); 
+          }   
+        }
+			} else if(doSimplify == 1) {
+				#pragma omp parallel for num_threads ( f4->threads )
+				for(size_t i = 0; i < savedRows.size(); i++) {
+					if(!savedRows[i].empty()) {
+						Polynomial p(currentDegree);
+						std::vector<coeffType> tmp(terms.size(), 0);
+						for(size_t j = 0; j < savedRows[i].size(); j++) {
+							tmp[termMapping[ savedRows[i][j].first  ]] = savedRows[i][j].second;
+						}
+
+#if PGBC_POST_REDUCE == 1
+						for(size_t k = 0; k < newPivots.size(); k++) {
+							uint32_t pivot = newPivots[k].first;
+							uint32_t index = newPivots[k].second;
+							if(tmp[pivot] != 0) {
+								coeffRow logRow(matrix[index].size(), 0);
+								for(size_t j = pivot; j < matrix[index].size(); j++) {
+									logRow[j] = f4->field->getFactor(matrix[index][j]);
+								}
+								size_t prefix = (pivot/f4->field->pad)*f4->field->pad;
+								f4->field->mulSub(tmp, logRow, tmp[pivot], prefix, tmp.size());
+							}
+						}
+#endif
 
 						p.push_back(1, rowOrigin[i].second.LT().mul(rowOrigin[i].first));
 						size_t j = 0;
@@ -440,17 +493,13 @@ namespace parallelGBC {
 
 			// Reset matrix.
 			rowOrigin.clear();
+			rowOriginDB.clear();
 			empty.clear();
 			terms.clear();
 			matrix.clear();
 			rightSide.clear();
 			upper = 0;
 			newPivots.clear();
-
-			/*if(doSimplify) {
-				std::cout << simplify->hits << " Hits\n";
-				std::cout << simplify->misses << " Misses\n";
-			}*/
 		}
 
 		void F4DefaultReducer::addSPolynomial(size_t i, size_t j, Term& lcm) {

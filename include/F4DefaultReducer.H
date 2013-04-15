@@ -32,6 +32,7 @@
 #include "../include/F4Reducer.H"
 #include "../include/F4Algorithm.H"
 #include "../include/F4Simplify.H"
+#include "../include/F4SimplifyDB.H"
 
 namespace parallelGBC {
 
@@ -82,14 +83,20 @@ namespace parallelGBC {
 
 	class F4DefaultReducer : public virtual F4Reducer {
 		public:
-			bool doSimplify;
+			int doSimplify;
 			size_t reduceBlockSize;
 
 			std::vector<std::pair<uint32_t, uint32_t> > newPivots;
 
+			
+			// this will become the 'real' part
+			F4SimplifyDB* simplifyDB;
+			std::vector<std::pair<size_t, Term> > rowOriginDB;
+			
+			// remains to make comparison possible
 			F4Simplify* simplify;
-
 			std::vector<std::pair<Term, Polynomial> > rowOrigin;
+
 			tbb::concurrent_vector<tbb::concurrent_vector<std::pair<uint32_t, coeffType> > > savedRows; 
 			std::vector<uint32_t> termMapping;
 
@@ -155,18 +162,24 @@ namespace parallelGBC {
 			 */
 			std::vector<bool> empty;
 
-			F4DefaultReducer(F4* f4, bool doSimplify = false, int reduceBlockSize = 1024) : F4Reducer(f4), doSimplify(doSimplify), reduceBlockSize(reduceBlockSize) {
+			F4DefaultReducer(F4* f4, int doSimplify = 0, int reduceBlockSize = 1024) : F4Reducer(f4), doSimplify(doSimplify), reduceBlockSize(reduceBlockSize) {
 				termCounter = 0;
 				upper = 0;
 				terms = std::map<Term, uint32_t, Term::comparator>( Term::comparator(f4->O, true) );
 				pivotsOrdered = std::map<Term, uint32_t, Term::comparator>( Term::comparator(f4->O, true) );
-				if(doSimplify) {
+				if(doSimplify == 2) {
+					simplifyDB = new F4SimplifyDB(f4->O);
+				} else if(doSimplify == 1) {
 					simplify = new F4Simplify();
 				}
 			}
 
 			~F4DefaultReducer() {
-				delete simplify;
+				if(doSimplify == 2) {
+					delete simplifyDB;
+				} else if(doSimplify == 1) {
+					delete simplify;
+				}
 			}
 
 
@@ -186,6 +199,15 @@ namespace parallelGBC {
 			 * Setup the reduction matrix.
 			 */
 			void prepare();
+
+			virtual void init() {
+				if(doSimplify == 2) {
+					for(size_t i = 0; i < f4->groebnerBasis.size(); i++) {
+						Term one =  f4->groebnerBasis[i].LT().getOne();
+						simplifyDB->insert(i, one, f4->groebnerBasis[i]);
+					}
+				}
+			}
 
 			virtual void reduce(std::vector<Polynomial>& polys, degreeType currentDegree);
 

@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
 	if(argc > 5) {
 		istringstream( argv[5] ) >> blockSize;
 	}
-	bool doSimplify = false;
+	int doSimplify = 0;
 	if(argc > 6) {
 	        istringstream( argv[6] ) >> doSimplify;
 	}
@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
 	f4.setReducer(new F4DefaultReducer(&f4, doSimplify, blockSize));
 	// Compute the groebner basis for the polynomials in 'list' with 'threads' threads/processors 
 	if(verbosity & 1) {
-		std::cout << "Parameters: " << threads << " threads, " << blockSize << " block size, " << "with" << (doSimplify ? "" : "out") << " simplify, with" << (withSugar ? "": "out") << " sugar\n";
+		std::cout << "Parameters: " << threads << " threads, " << blockSize << " block size, " << "with" << (doSimplify ? "" : "out") << " simplify" << (doSimplify == 2 ? "DB" : "") << ", with" << (withSugar ? "": "out") << " sugar\n";
 	}
 	vector<Polynomial> result = f4.compute(list);
 	// Return the size of the groebner basis

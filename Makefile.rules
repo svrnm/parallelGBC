@@ -37,7 +37,8 @@ PGBC_USE_SSE=1
 # PGBC_SORTING defines the sorting for the reduction, the behaviour only changes if this
 # value is set to one. Further sortings may follow
 PGBC_SORTING=1
-
+#
+PGBC_POST_REDUCE=0
 
 # Configure CXXFLAGS. 
 # the following CXXFLAGS are for the GNU COMPILER:
@@ -55,7 +56,7 @@ LIBRARY = ../lib/libf4.a
 ###
 
 # Combine compile time options with compile time optimizations
-CXXFLAGS += -D'PGBC_COEFF_BITS=$(PGBC_COEFF_BITS)' -D'PGBC_USE_SSE=$(PGBC_USE_SSE)' -D'PGBC_SORTING=$(PGBC_SORTING)'
+CXXFLAGS += -D'PGBC_COEFF_BITS=$(PGBC_COEFF_BITS)' -D'PGBC_USE_SSE=$(PGBC_USE_SSE)' -D'PGBC_SORTING=$(PGBC_SORTING)' -D'PGBC_POST_REDUCE=$(PGBC_POST_REDUCE)'
 
 # Below you find some generic make rules ...
 dummy:

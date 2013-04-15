@@ -206,6 +206,7 @@ namespace parallelGBC {
 		if(this->reducer == 0) {
 			this->reducer = new F4DefaultReducer(this, false, 1024);
 		}
+		this->reducer->init();
 		
 		while( !pairs.empty() ) {
 			vector<Polynomial> polys;

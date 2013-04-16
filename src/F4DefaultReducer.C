@@ -130,16 +130,23 @@ namespace parallelGBC {
 	void F4DefaultReducer::pReduce()
 	{
 		size_t end;
-		size_t s = (( rightSide.size()+reduceBlockSize-1 )/ reduceBlockSize ) * reduceBlockSize;
+
+#if PGBC_WITH_MPI == 1
+		size_t columnCount = rightSide.size();
+#else
+		size_t columnCount = terms.size();
+#endif
+
+		size_t s = (( columnCount+reduceBlockSize-1 )/ reduceBlockSize ) * reduceBlockSize;
 
 		matrix.assign(upper/2, coeffRow());
 
 		for(size_t start = 0; start < s; start+=reduceBlockSize) {
 			size_t last = reduceBlockSize;
-			if(start+reduceBlockSize < rightSide.size()) {
+			if(start+reduceBlockSize < columnCount) {
 				end = start+reduceBlockSize;
 			} else {
-				end = rightSide.size();
+				end = columnCount;
 				last = end - start;
 			}
 
@@ -168,7 +175,6 @@ namespace parallelGBC {
 				tbb::parallel_for(blocked_range<size_t>(0, ops[i].size()), F4PReduceRange(*this, rs, prefixes, suffixes, i, start));
 			}
 
-			//for(size_t i = 0; i < upper; i++) {
 			for(size_t i = 1, j = 0; i < upper; i+=2, j++) {
 				matrix[j].insert(matrix[j].end(), rs[i].begin(), rs[i].begin() + last); // copy rows to matrix;
 			}
@@ -436,7 +442,8 @@ namespace parallelGBC {
 
 			size_t nCounter = 0;
 			for(size_t i = 0; i < upper/2; i++) {
-				temp.assign(matrix[i].size(), 0);
+				size_t aligned = (( matrix[i].size()+reduceBlockSize-1 )/ reduceBlockSize ) * reduceBlockSize;
+				temp.assign(aligned, 0);
 				for(size_t j = 0; j < termMapping.size(); j++) {
 					if(matrix[i][j] != 0) {
 						nCounter++;
@@ -631,7 +638,6 @@ namespace parallelGBC {
 				matrix.clear();
 				mpi::broadcast(f4->world, status, 0); 	
 			}
-
 #endif
 		}
 	}

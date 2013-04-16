@@ -176,8 +176,7 @@ namespace parallelGBC {
 
 #if PGBC_WITH_MPI == 1
       std::vector<tbb::concurrent_vector<std::pair<uint32_t, std::pair<coeffType, uint32_t> > > > toSend;
-			      std::vector<std::vector<std::pair<uint32_t, std::pair<coeffType, uint32_t> > > > toSendCopy; // required :-(
-
+			std::vector<std::vector<std::pair<uint32_t, std::pair<coeffType, uint32_t> > > > toSendCopy; // required :-(
 #endif
 
 			F4DefaultReducer(F4* f4, int doSimplify = 0, int reduceBlockSize = 1024) : F4Reducer(f4), doSimplify(doSimplify), reduceBlockSize(reduceBlockSize) {

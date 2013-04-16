@@ -33,20 +33,20 @@ PGBC_SORTING=1
 # Allow post reduction if simplify is used.
 PGBC_POST_REDUCE=0
 # Enable MPI (you also should configure CXX to use mpic++)
-PGBC_WITH_MPI=1
+PGBC_WITH_MPI=0
 
 # Set your Compiler. Attention you need a compiler which supports the  C++11 standard
-CXX = /usr/bin/mpic++
+CXX = /usr/bin/g++
 AR = /usr/bin/ar
 # Enable the following if you want to use google's tcmalloc
-#TCMALLOC = 
-TCMALLOC = -ltcmalloc
+TCMALLOC = 
+#TCMALLOC = -ltcmalloc
 
 # Configure CXXFLAGS. 
 # the following CXXFLAGS are for the GNU COMPILER:
-#CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -std=c++0x
+CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -std=c++0x
 # Possible FLAGS:
-CXXFLAGS = -fPIC -Wall -fopenmp -pipe -std=c++0x -march=native -O3
+#CXXFLAGS = -fPIC -Wall -fopenmp -pipe -std=c++0x -march=native -O3
 # DEBUG FLAGS:
 #CXXFLAGS = -fPIC -Wall -fopenmp -pipe -std=c++0x -pg -g -gdwarf-2
 
@@ -56,6 +56,12 @@ LIBRARY = ../lib/libf4.a
 ### 
 # You shouldn't need to modify the following
 ###
+
+ifeq ($(PGBC_WITH_MPI),1)
+	BOOSTMPI=-lboost_mpi
+else
+	BOOSTMPI=
+endif
 
 # Combine compile time options with compile time optimizations
 CXXFLAGS += -D'PGBC_COEFF_BITS=$(PGBC_COEFF_BITS)' -D'PGBC_USE_SSE=$(PGBC_USE_SSE)' -D'PGBC_SORTING=$(PGBC_SORTING)' -D'PGBC_POST_REDUCE=$(PGBC_POST_REDUCE)' -D'PGBC_WITH_MPI=$(PGBC_WITH_MPI)'
@@ -68,7 +74,7 @@ dummy:
 	$(CXX) $(CXXFLAGS) -c $<
 
 %.bin: %.C $(LIBRARY)
-	$(CXX) $(CXXFLAGS) -o $(<:%.C=%.bin) $< $(LIBRARY) -lboost_regex -ltbb $(TCMALLOC) -lboost_mpi
+	$(CXX) $(CXXFLAGS) -o $(<:%.C=%.bin) $< $(LIBRARY) -lboost_regex -ltbb $(TCMALLOC) $(BOOSTMPI)
 
 objclean:
 	rm -f $(OBJ)

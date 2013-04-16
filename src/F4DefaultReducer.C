@@ -360,7 +360,7 @@ namespace parallelGBC {
 			ops.pop_back();
 
 			if(doSimplify > 0) {
-				savedRows.assign(rowCount, tbb::concurrent_vector<std::pair<uint32_t, coeffType> >());
+				savedRows.assign(rowCount, vector<pair<uint32_t, coeffType> >());
       }
 
 			f4->log->prepareTime += F4Logger::seconds() - timer;
@@ -384,6 +384,7 @@ namespace parallelGBC {
 			pReduce();
 
 #if PGBC_WITH_MPI == 1
+			vector<coeffMatrix> gatheredMatrix;
 			mpi::gather(f4->world, matrix, gatheredMatrix, 0);
 			// Reconstructing matrix
 			coeffMatrix m(upper/2, coeffRow(terms.size(), 0));
@@ -403,6 +404,21 @@ namespace parallelGBC {
 			}
 			matrix.swap(m);
 			gatheredMatrix.clear();
+
+			if(doSimplify > 0) {
+				vector<vector<pair<uint32_t, coeffType > > > s(rowCount, vector<pair<uint32_t, coeffType > >());
+				vector<vector<vector<pair<uint32_t, coeffType> > > > gatheredSavedRows; 
+				mpi::gather(f4->world, savedRows, gatheredSavedRows, 0);
+				for(size_t i = 0; i < gatheredSavedRows.size(); i++) {
+					for(size_t j = 0; j < gatheredSavedRows[i].size(); j++) {
+						for(size_t k = 0; k < gatheredSavedRows[i][j].size(); k++) {
+							s[j].push_back( make_pair(gatheredSavedRows[i][j][k].first * f4->world.size() + i, gatheredSavedRows[i][j][k].second) );
+						}
+					}
+				}
+				savedRows.swap(s);
+				gatheredSavedRows.clear();
+			}
 #endif
 
 			termCounter = 0;
@@ -595,6 +611,12 @@ namespace parallelGBC {
 				} while( status == 0 );
 				mpi::broadcast(f4->world, upper, 0); 
 				mpi::broadcast(f4->world, rowCount, 0); 
+	
+				
+				if(doSimplify > 0) {
+					savedRows.assign(rowCount, vector<pair<uint32_t, coeffType> >());
+				}
+				
 				mpi::broadcast(f4->world, ops, 0); 
 				mpi::broadcast(f4->world, deps, 0); 
 				if(!rightSide.empty()) {
@@ -603,6 +625,9 @@ namespace parallelGBC {
 				ops.clear();
 				deps.clear();
 				mpi::gather(f4->world, matrix, 0); 
+				if(doSimplify > 0) {
+					mpi::gather(f4->world, savedRows, 0);
+				}
 				matrix.clear();
 				mpi::broadcast(f4->world, status, 0); 	
 			}

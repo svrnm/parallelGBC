@@ -1,4 +1,4 @@
-# Makefile.rules for parallelGBC 0.5 and later
+# Makefile.rules for parallelGBC 0.8 and later
 #  
 # With this file you can configure the compilation of the tool.
 #
@@ -33,7 +33,7 @@ PGBC_SORTING=1
 # Allow post reduction if simplify is used.
 PGBC_POST_REDUCE=0
 # Enable MPI (you also should configure CXX to use mpic++)
-PGBC_WITH_MPI=0
+PGBC_WITH_MPI=1
 
 # Set your Compiler. Attention you need a compiler which supports the  C++11 standard
 CXX = /usr/bin/mpic++

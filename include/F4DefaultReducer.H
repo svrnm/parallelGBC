@@ -1,4 +1,8 @@
-/**********************
+/**
+ *  This file includes the headers for the 'defaultReducer' which implements the algorithm as described
+ *  in http://link.springer.com/chapter/10.1007/978-3-642-32973-9_22 
+ *
+ ***********************
  *
  *  This file is part of parallelGBC, a parallel groebner basis computation tool.
  *
@@ -105,7 +109,7 @@ namespace parallelGBC {
 			F4Simplify* simplify;
 			std::vector<std::pair<Term, Polynomial> > rowOrigin;
 
-			tbb::concurrent_vector<tbb::concurrent_vector<std::pair<uint32_t, coeffType> > > savedRows; 
+			std::vector<std::vector<std::pair<uint32_t, coeffType> > > savedRows; 
 			std::vector<uint32_t> termMapping;
 
 			/**
@@ -173,7 +177,7 @@ namespace parallelGBC {
 #if PGBC_WITH_MPI == 1
       std::vector<tbb::concurrent_vector<std::pair<uint32_t, std::pair<coeffType, uint32_t> > > > toSend;
 			      std::vector<std::vector<std::pair<uint32_t, std::pair<coeffType, uint32_t> > > > toSendCopy; // required :-(
-						std::vector<coeffMatrix> gatheredMatrix;
+
 #endif
 
 			F4DefaultReducer(F4* f4, int doSimplify = 0, int reduceBlockSize = 1024) : F4Reducer(f4), doSimplify(doSimplify), reduceBlockSize(reduceBlockSize) {

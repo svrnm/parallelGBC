@@ -28,7 +28,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 #include "../include/F4.H"
 #include <iostream>
 #include <fstream>
@@ -43,8 +43,8 @@ using namespace parallelGBC;
 int main(int argc, char* argv[]) {
 	// Input stuff, example below ...
 #if PGBC_WITH_MPI == 1
-	 mpi::environment env(argc, argv);
-	 mpi::communicator world;
+	mpi::environment env(argc, argv);
+	mpi::communicator world;
 #endif
 
 	// Is there a file provided?
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
 	}
 	int doSimplify = 0;
 	if(argc > 6) {
-	        istringstream( argv[6] ) >> doSimplify;
+		istringstream( argv[6] ) >> doSimplify;
 	}
 	bool withSugar = true;
 	if(argc > 7) {
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
 	// Count the indeterminants automaticly
 	boost::regex expression("x\\[(\\d*)\\]");
 	degreeType max = 1, val;
-	
+
 	boost::sregex_token_iterator iter(t.begin(), t.end(), expression, 1);
 	boost::sregex_token_iterator end;
 
@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
 
 	// [[[ EXAMPLE ]]] //
 	// Use the following example as guidance if you want to use it for your own code:
-	
+
 	// 1. Create a term ordering for 'max' indeterminants, e.g. if you use x_1...x_n, the parameter is n.
 	TOrdering* o = new DegRevLexOrdering(max);
 	// 2. Create a power product monoid for the terms. Pay attention that ordering and monoid match.
@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
 	CoeffField* cf = new CoeffField(32003);
 	// 4. Read in the polynomials from string 't'. The second parameter is the power product monoid.
 	vector<Polynomial> list = Polynomial::createList(t, m);
-	
+
 	// 5. Before you can compute the groebner basis, you have to order your polynomials by term
 	// ordering and have to bring in the coefficients to your coefficient field. Finally you have
 	// to normalize your polynomials. Remark: This step will be merged into f4(...) in a later release,
@@ -137,18 +137,24 @@ int main(int argc, char* argv[]) {
 	}
 	vector<Polynomial> result = f4.compute(list);
 	// Return the size of the groebner basis
-	if(printGB > 0)
-	{
-		for(size_t i = 0; i < result.size(); i++) {
-			if(i > 0) {
-				cout << ", ";
+#if PGBC_WITH_MPI == 1
+	if(world.rank() == 0) {
+#endif
+		if(printGB > 0)
+		{
+			for(size_t i = 0; i < result.size(); i++) {
+				if(i > 0) {
+					cout << ", ";
+				}
+				cout << result[i];
 			}
-			cout << result[i];
+			cout << "\n";
+		} else {
+			cout << "Size of GB:\t" << result.size() << "\n";
 		}
-		cout << "\n";
-	} else {
-		cout << "Size of GB:\t" << result.size() << "\n";
+#if PGBC_WITH_MPI == 1
 	}
+#endif
 	// Clean up your memory
 	delete o;
 	delete cf;

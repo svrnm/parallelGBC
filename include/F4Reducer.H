@@ -1,4 +1,8 @@
- /**********************
+ /**
+ *  An abstraction of the 'reduction' part of the F4 algorithm. This allows to plug-in further
+ *  reducers.
+ *
+ ****
  *
  *  This file is part of parallelGBC, a parallel groebner basis computation tool.
  *
@@ -37,23 +41,29 @@ namespace parallelGBC {
 
 	class F4Reducer {
 		public:
+			// The reducer is directly linked to one instance of 'F4'. So you have access to all
+			// the other properties (groebnerBasis, inGroebnerBasis, logger, ...)
 			F4* f4;
 
+			// Construct a new instance of F4Reducer
 			F4Reducer(F4* f4) : f4(f4) {}
 
 			virtual ~F4Reducer() {}
 
-			// Overwrite if required.
+			// Overwrite if required. This method is called before the first reduction
 			virtual void init() { }
 
-			// MPI specific for non-master reducers, implement if required
+			// MPI specific (?) for non-master reducers, implement if required
 			virtual void client() { }
 
-			// Overwirte if required.
+			// Overwirte if required. This method is called after the last reduction, e.g. for clean up
 			virtual void finish() { }
 
+			// Implement to realize your specific reduction
 			virtual void reduce(std::vector<Polynomial>& polys, degreeType currentDegree) = 0;
 	
+			// This function is called to provide the list of all S-polynomials. In one reduction there may
+			// be several s-polynomials to be reduced
 			virtual void addSPolynomial(size_t i, size_t j, Term& lcm) = 0;
 	};
 }

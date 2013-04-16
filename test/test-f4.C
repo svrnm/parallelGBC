@@ -42,7 +42,11 @@ using namespace parallelGBC;
 
 int main(int argc, char* argv[]) {
 	// Input stuff, example below ...
-	
+#if PGBC_WITH_MPI == 1
+	 mpi::environment env(argc, argv);
+	 mpi::communicator world;
+#endif
+
 	// Is there a file provided?
 	if(argc < 2) {
 		cerr << "Please provide a file and a optional number of threads.\n";
@@ -121,7 +125,11 @@ int main(int argc, char* argv[]) {
 	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::bringIn), _1, cf, false));
 
 	// Create the f4 computer.
+#if PGBC_WITH_MPI == 1
+	F4 f4(o, cf, world, withSugar, threads, verbosity);
+#else 
 	F4 f4(o, cf, withSugar, threads, verbosity);
+#endif
 	f4.setReducer(new F4DefaultReducer(&f4, doSimplify, blockSize));
 	// Compute the groebner basis for the polynomials in 'list' with 'threads' threads/processors 
 	if(verbosity & 1) {

@@ -79,6 +79,14 @@ namespace parallelGBC {
 		size_t size() {
 			return targets.size();
 		}
+
+
+    template<class Archive> void serialize(Archive & ar, const unsigned int version)
+    {   
+        ar & targets;
+        ar & opers;
+        ar & factors;
+    }
 	};
 
 	class F4DefaultReducer : public virtual F4Reducer {
@@ -162,6 +170,12 @@ namespace parallelGBC {
 			 */
 			std::vector<bool> empty;
 
+#if PGBC_WITH_MPI == 1
+      std::vector<tbb::concurrent_vector<std::pair<uint32_t, std::pair<coeffType, uint32_t> > > > toSend;
+			      std::vector<std::vector<std::pair<uint32_t, std::pair<coeffType, uint32_t> > > > toSendCopy; // required :-(
+						std::vector<coeffMatrix> gatheredMatrix;
+#endif
+
 			F4DefaultReducer(F4* f4, int doSimplify = 0, int reduceBlockSize = 1024) : F4Reducer(f4), doSimplify(doSimplify), reduceBlockSize(reduceBlockSize) {
 				termCounter = 0;
 				upper = 0;
@@ -212,6 +226,10 @@ namespace parallelGBC {
 			virtual void reduce(std::vector<Polynomial>& polys, degreeType currentDegree);
 
 			virtual void addSPolynomial(size_t i, size_t j, Term& lcm);
+
+			virtual void client();
+
+			virtual void finish();
 
 			/**
 			 * Process a S-Polynomial (ir*current) and do the symbolic preprocessing by adding required

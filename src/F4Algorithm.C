@@ -188,13 +188,26 @@ namespace parallelGBC {
 		reducer->reduce(polys, currentDegree);
 	}
 
+
 	vector<Polynomial> F4::compute(vector<Polynomial>& generators) 
 	{
+		vector<Polynomial> result;
+		tbb::task_scheduler_init init(threads);
+
+		if(this->reducer == 0) {
+			this->reducer = new F4DefaultReducer(this, false, 1024);
+		}
+		// Attention: init is only called for the "main reducer"
+
+#if PGBC_WITH_MPI == 1
+		if(world.rank() == 0) {
+#endif
+		
+
 		double start = F4Logger::seconds();
 
 		pairs = F4PairSet( F4Pair::comparator(O) );
 
-		tbb::task_scheduler_init init(threads);
 
 		sort(generators.begin(), generators.end(), Polynomial::comparator(O, true));		
 
@@ -203,9 +216,6 @@ namespace parallelGBC {
 
 		updatePairs(generators, true);
 
-		if(this->reducer == 0) {
-			this->reducer = new F4DefaultReducer(this, false, 1024);
-		}
 		this->reducer->init();
 		
 		while( !pairs.empty() ) {
@@ -217,6 +227,8 @@ namespace parallelGBC {
 			}
 		}
 
+		this->reducer->finish();
+
 		if(log->verbosity & 2) {
 			*(log->out) << "Reduction (s): \t" << log->reductionTime << "\n";
 		}
@@ -227,7 +239,6 @@ namespace parallelGBC {
 		if(log->verbosity & 8) {
 			*(log->out) << "Update (s): \t" << log->updateTime << "\n";
 		}
-		vector<Polynomial> result;
 		for(size_t i = 0; i < groebnerBasis.size(); i++)
 		{
 			if(inGroebnerBasis[i])
@@ -244,6 +255,11 @@ namespace parallelGBC {
 		 *(log->out) << updateTime << ";";
 		 *(log->out) << prepareTime << "\n";
 		 */
+#if PGBC_WITH_MPI == 1
+		} else {
+			this->reducer->client();
+		}
+#endif
 		return result;
 	}
 }

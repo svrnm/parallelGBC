@@ -25,6 +25,7 @@
 
 using namespace std;
 using namespace tbb;
+using namespace boost;
 
 namespace parallelGBC {
 
@@ -129,15 +130,17 @@ namespace parallelGBC {
 	void F4DefaultReducer::pReduce()
 	{
 		size_t end;
-		size_t s = (( terms.size()+reduceBlockSize-1 )/ reduceBlockSize ) * reduceBlockSize;
+		size_t s = (( rightSide.size()+reduceBlockSize-1 )/ reduceBlockSize ) * reduceBlockSize;
 
 		matrix.assign(upper/2, coeffRow());
 
 		for(size_t start = 0; start < s; start+=reduceBlockSize) {
-			if(start+reduceBlockSize < terms.size()) {
+			size_t last = reduceBlockSize;
+			if(start+reduceBlockSize < rightSide.size()) {
 				end = start+reduceBlockSize;
 			} else {
-				end = terms.size();
+				end = rightSide.size();
+				last = end - start;
 			}
 
 			coeffMatrix rs(rowCount, coeffRow(reduceBlockSize, 0) );
@@ -167,11 +170,10 @@ namespace parallelGBC {
 
 			//for(size_t i = 0; i < upper; i++) {
 			for(size_t i = 1, j = 0; i < upper; i+=2, j++) {
-				matrix[j].insert(matrix[j].end(), rs[i].begin(), rs[i].end()); // copy rows to matrix;
+				matrix[j].insert(matrix[j].end(), rs[i].begin(), rs[i].begin() + last); // copy rows to matrix;
 			}
 			std::copy(savedDeps.begin(), savedDeps.end(), deps.begin());
 		}
-
 
 
 		}
@@ -212,7 +214,12 @@ namespace parallelGBC {
 						termsUnordered.insert( make_pair(t,temp) );
 					}
 					// Column -> (Entry, Row)
+#if PGBC_WITH_MPI == 1
+					int dst = termsUnordered[t] % f4->world.size();
+					toSend[dst].push_back(  make_pair( termsUnordered[t]/f4->world.size(), make_pair(coeff, (uint32_t)i)) );
+#else
 					rightSide[ termsUnordered[t] ].push_back( make_pair(coeff, i) );
+#endif		
 				}
 			}
 		}
@@ -231,16 +238,17 @@ namespace parallelGBC {
 		void F4DefaultReducer::prepare()
 		{
 			double timer = F4Logger::seconds();
-			// SELECTION
-
-			// SELECTION END
-
 			upper *= 2;
-			//rightSide.assign(rows.size(), tbb::concurrent_vector<pair<coeffType, uint32_t> >() );
-			//double testtimer = 0;
 
+#if PGBC_WITH_MPI == 1
+			int status = 0;
+			std::vector<std::pair<uint32_t, std::pair<coeffType, uint32_t> > > ownPart;
+#endif
 			for(size_t i = 0; i < rows.size(); i++) 
 			{
+#if PGBC_WITH_MPI == 1
+				toSend.assign(f4->world.size(), tbb::concurrent_vector<std::pair<uint32_t, std::pair<coeffType, uint32_t> > >());
+#endif
 				Polynomial current = f4->groebnerBasis[ rows[i].first ];
 				Term ir = rows[i].second.div(current.LT());
 				if(doSimplify == 2) {
@@ -254,8 +262,27 @@ namespace parallelGBC {
 						simplify->search(ir, current);
 						rowOrigin.push_back( make_pair( ir,current ) );
 				} 
+#if PGBC_WITH_MPI == 0
 				rightSide.grow_to_at_least( termsUnordered.size() + current.size() );
+#endif
 				tbb::parallel_for(blocked_range<size_t>((i > upper || i % 2 == 0 ? 1 : 0), current.size()), F4SetupRow(*this, current, ir, i));
+#if PGBC_WITH_MPI == 1
+				for(size_t k = 0; k < toSend.size(); k++) {
+					toSendCopy.push_back( std::vector<std::pair<uint32_t, std::pair<coeffType, uint32_t> > >(toSend[k].begin(), toSend[k].end()) );
+				}  	
+				mpi::scatter(f4->world, toSendCopy, ownPart, 0);
+				for(size_t k = 0; k < ownPart.size(); k++) {
+					rightSide.grow_to_at_least( ownPart[k].first+1 );
+					rightSide[ ownPart[k].first ].push_back( ownPart[k].second );
+				}
+				toSend.clear();
+				toSendCopy.clear();
+				ownPart.clear();
+				if(i == rows.size() - 1) {
+					status = 1;
+				}
+				mpi::broadcast(f4->world, status, 0);
+#endif
 			}
 			rowCount = rows.size();
 			rows.clear();
@@ -264,8 +291,11 @@ namespace parallelGBC {
 
 			terms.insert(termsUnordered.begin(), termsUnordered.end());
 			termsUnordered.clear();
-			termCounter = 0;
 
+#if PGBC_WITH_MPI == 1
+  mpi::broadcast(f4->world, upper, 0);
+  mpi::broadcast(f4->world, rowCount, 0);
+#endif
 
 			if(f4->log->verbosity & 64) {
 				*(f4->log->out) << "Matrix (r x c):\t" << rowCount << " x " << terms.size() << "+" << pivotsOrdered.size() << "\n";
@@ -338,12 +368,44 @@ namespace parallelGBC {
 
 		void F4DefaultReducer::reduce(vector<Polynomial>& polys, degreeType currentDegree)
 		{
-
+#if PGBC_WITH_MPI == 1
+			int status = 1;
+			mpi::broadcast(f4->world, status, 0);
+#endif
+			
 			prepare();
+#if PGBC_WITH_MPI == 1
+			mpi::broadcast(f4->world, ops, 0);
+			mpi::broadcast(f4->world, deps, 0);
+#endif
 
 			// ELIMINATE
 			double timer = F4Logger::seconds();
 			pReduce();
+
+#if PGBC_WITH_MPI == 1
+			mpi::gather(f4->world, matrix, gatheredMatrix, 0);
+			// Reconstructing matrix
+			coeffMatrix m(upper/2, coeffRow(terms.size(), 0));
+			for(size_t i = 0; i < gatheredMatrix.size(); i++) {
+				for(size_t j = 0; j < gatheredMatrix[i].size(); j++) {
+					size_t n = gatheredMatrix[i][j].size();
+					// Local matrix may be to large since the setup of rightSide may be to large
+					if(n > (termCounter+f4->world.size()-1) / f4->world.size()) {
+						n = (termCounter+f4->world.size()-1) / f4->world.size();
+					}
+					//std::cout << "For " << i << " " << j << " n is " << n << "\n";
+					for(size_t k = 0 ; k < n; k++) {
+						//std::cout << "Writing " << gatheredMatrix[i][j][k] << " to row " << j << " and column " << (k * f4->world.size() + i) << "\n";
+						m[j][k * f4->world.size() + i] = gatheredMatrix[i][j][k];
+					}
+				}
+			}
+			matrix.swap(m);
+			gatheredMatrix.clear();
+#endif
+
+			termCounter = 0;
 			ops.clear();
 			empty.assign(upper/2, false);
 
@@ -507,5 +569,44 @@ namespace parallelGBC {
 			rows.push_back(make_pair(j, lcm));
 			pivots.insert(make_pair(lcm, 2*upper));
 			upper++;
+		}
+
+		void F4DefaultReducer::finish() {
+#if PGBC_WITH_MPI == 1
+			int status = 2;
+			mpi::broadcast(f4->world, status, 0);
+#endif
+		}
+
+		void F4DefaultReducer::client() {
+#if PGBC_WITH_MPI == 1
+			std::vector<std::pair<uint32_t, std::pair<coeffType, uint32_t> > > ownPart;
+			int status;
+			mpi::broadcast(f4->world, status, 0); 	
+			while(status != 2) {
+				do {
+					mpi::scatter(f4->world, toSendCopy, ownPart, 0);
+					for(size_t i = 0; i < ownPart.size(); i++) {
+						rightSide.grow_to_at_least( ownPart[i].first+1 );
+						rightSide[ ownPart[i].first ].push_back( ownPart[i].second );
+					}   
+					ownPart.clear();
+					mpi::broadcast(f4->world, status, 0); 
+				} while( status == 0 );
+				mpi::broadcast(f4->world, upper, 0); 
+				mpi::broadcast(f4->world, rowCount, 0); 
+				mpi::broadcast(f4->world, ops, 0); 
+				mpi::broadcast(f4->world, deps, 0); 
+				if(!rightSide.empty()) {
+					pReduce();
+				}   
+				ops.clear();
+				deps.clear();
+				mpi::gather(f4->world, matrix, 0); 
+				matrix.clear();
+				mpi::broadcast(f4->world, status, 0); 	
+			}
+
+#endif
 		}
 	}

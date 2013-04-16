@@ -43,7 +43,14 @@ namespace parallelGBC {
 
 			virtual ~F4Reducer() {}
 
+			// Overwrite if required.
 			virtual void init() { }
+
+			// MPI specific for non-master reducers, implement if required
+			virtual void client() { }
+
+			// Overwirte if required.
+			virtual void finish() { }
 
 			virtual void reduce(std::vector<Polynomial>& polys, degreeType currentDegree) = 0;
 	

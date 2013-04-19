@@ -65,7 +65,7 @@ namespace parallelGBC {
 			}
 
 			//Check the criteria only if h will be inserted into the groebner basis
-			if(insertIntoG)
+			if(true) //insertIntoG): BUG FIX! This doesn't work!
 			{   
 				// Do the first criterium: 
 				// Cancel in P all pairs (i,j) which satisfy T(i,j) = T(i,j,t), T(i,t) != T(i,j) != T(j,t) [ B_t(i,j) ]

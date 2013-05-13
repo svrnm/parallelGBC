@@ -65,6 +65,7 @@ namespace parallelGBC {
 			factors.push_back( f );
 		}
 
+	
 		int32_t target(size_t i) {
 			return targets[i];
 		}
@@ -84,12 +85,17 @@ namespace parallelGBC {
 			return targets.size();
 		}
 
+		void clear() {
+			targets.clear();
+			opers.clear();
+			factors.clear();
+		}
 
     template<class Archive> void serialize(Archive & ar, const unsigned int version)
     {   
-        ar & targets;
-        ar & opers;
-        ar & factors;
+					ar & targets;
+					ar & opers;
+					ar & factors;
     }
 	};
 
@@ -148,6 +154,7 @@ namespace parallelGBC {
 			 * blocking operations.
 			 */
 			std::vector<F4Operations > ops;
+			
 			/**
 			 * The dense representation of the matrix entries in the non pivot part. The operations of 'ops' will be executed
 			 * on this matrix

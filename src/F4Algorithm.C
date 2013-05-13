@@ -65,7 +65,7 @@ namespace parallelGBC {
 			}
 
 			//Check the criteria only if h will be inserted into the groebner basis
-			if(insertIntoG)
+			if(true) //insertIntoG): BUG FIX! This doesn't work!
 			{   
 				// Do the first criterium: 
 				// Cancel in P all pairs (i,j) which satisfy T(i,j) = T(i,j,t), T(i,t) != T(i,j) != T(j,t) [ B_t(i,j) ]
@@ -234,10 +234,13 @@ namespace parallelGBC {
 		}
 		if(log->verbosity & 4) {
 			*(log->out) << "Prepare (s): \t" << log->prepareTime << "\n";
-			*(log->out) << "Simplify (s): \t" << log->simplifyTime << "\n";
 		}
 		if(log->verbosity & 8) {
 			*(log->out) << "Update (s): \t" << log->updateTime << "\n";
+			*(log->out) << "Simplify (s): \t" << log->simplifyTime << "\n";
+#if PGBC_WITH_MPI == 1
+			*(log->out) << "MPI Overhead (s): \t" << log->mpiTime << "\n";
+#endif
 		}
 		for(size_t i = 0; i < groebnerBasis.size(); i++)
 		{

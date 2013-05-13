@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
 	// doing everything twice shouldn't harm.
 	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::order), _1, o));
 	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::bringIn), _1, cf, false));
-
+	
 	// Create the f4 computer.
 #if PGBC_WITH_MPI == 1
 	F4 f4(o, cf, world, withSugar, threads, verbosity);

@@ -58,7 +58,7 @@ LIBRARY = ../lib/libf4.a
 ###
 
 ifeq ($(PGBC_WITH_MPI),1)
-	BOOSTMPI=-lboost_mpi
+	BOOSTMPI=-lboost_serialization -lboost_mpi
 else
 	BOOSTMPI=
 endif

@@ -1,4 +1,4 @@
-Parallel Groebner Basis Computation (beta 0.8)
+Parallel Groebner Basis Computation (beta 0.9)
 =======
 
 License
@@ -53,6 +53,10 @@ cube selection strategy is.
 In general you can compute with this binary using the following parameters:
 
     ./test/test-f4 <input-file> <processors> <verbosity> <printGB> <blocksize> <doSimplify> <withSugar>
+
+If you have compiled the binary using MPI you can compute distributed:
+
+		mpirun -np <slots> --host <hosts> ./test/test-f4 <...>
 
 Checking functionality
 ----------------------

@@ -5,7 +5,7 @@ License
 -------
 This program is free software; see LICENSE.TXT for more details
 
-REASON
+Reason
 ------
 This program provides an algorithm for parallel groebner basis computation.
 If you do not know, what a groebner basis is and what they are for,
@@ -17,14 +17,21 @@ Proceedings of CASC 2012 in Maribor. You can read the paper at [Springer Link](h
 
 Requirements
 ------------
-* A compiler which supports C++0x / C++11 (GCC is fine)
+* A compiler which supports C++11 (GCC4.4 should be fine, later versions are recommended)
 * [Intel TBB](http://threadingbuildingblocks.org/)
-* A processor which has SSE2, if not disable SSE in the Makefile.rules
-* Several processors if you want to use the parallelization (dual or quadcores, etc.)
+* [Boost](http://www.boost.org/), especially Boost.Regex (if you want to use the example binaries in test/)
+* OpenMP is optional but can speed up some more computations by parallelization
+* Several processors if you want to use the parallelization (dual or quadcores, etc.).
+* A processor which has SSE2, if not disable the SSE option in Makefile.rules.
+* openmpi and Boost.MPI if you want to do distributed parallelization, if not disable the MPI option in Makefile.rules.
 
 Installation
 ------------
-Just execute
+If you need to configure some settings (SSE,MPI) just have a look into Makefile.rules
+
+		vim Makefile.rules
+
+Afterwards or if you'd like to use the default settings just execute
 
     make
 
@@ -32,8 +39,7 @@ and if you have several CPUs, you can use
 
     make -j<NUM_OF_PROCS>
 
-If you experience any problems, then have a look to the Makefile or 
-contact the author
+If you experience any problems, then have a look to the Makefile.rules or contact the author
 
 Testing
 -------

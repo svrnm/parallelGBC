@@ -39,6 +39,10 @@
 #include "../include/F4Utils.H"
 #include "../include/F4Logger.H"
 #include "../include/F4Reducer.H"
+#if PGBC_WITH_MPI == 1
+#include <boost/mpi.hpp>
+#include <boost/serialization/utility.hpp>
+#endif
 
 namespace parallelGBC {
 
@@ -197,8 +201,17 @@ namespace parallelGBC {
 				this->reducer = reducer;
 			}
 
-			F4(const TOrdering* O, CoeffField* field, bool withSugar = true, int threads = 1, int verbosity = 0, std::ostream& output = std::cout) : O(O), field(field), withSugar(withSugar), threads(threads), log(new F4Logger(verbosity, &output)) {
-			}
+#if PGBC_WITH_MPI == 1
+
+			boost::mpi::communicator& world;
+			tbb::concurrent_vector<boost::mpi::request> reqs;
+
+			F4(const TOrdering* O, CoeffField* field, boost::mpi::communicator& world, bool withSugar = true, int threads = 1, int verbosity = 0, std::ostream& output = std::cout) : O(O), field(field), withSugar(withSugar), threads(threads), log(new F4Logger(verbosity, &output)), world(world) { }
+
+#else 
+			F4(const TOrdering* O, CoeffField* field, bool withSugar = true, int threads = 1, int verbosity = 0, std::ostream& output = std::cout) : O(O), field(field), withSugar(withSugar), threads(threads), log(new F4Logger(verbosity, &output)) { }
+#endif
+
 
 			~F4() {
 				delete log;

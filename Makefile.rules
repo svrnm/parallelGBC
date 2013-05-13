@@ -1,4 +1,4 @@
-# Makefile.rules for parallelGBC 0.5 and later
+# Makefile.rules for parallelGBC 0.8 and later
 #  
 # With this file you can configure the compilation of the tool.
 #
@@ -20,13 +20,6 @@
 # along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Set your Compiler. Attention you need a compiler which supports the  C++11 standard
-CXX = /usr/bin/g++
-AR = /usr/bin/ar
-# Enable the following if you want to use google's tcmalloc
-#TCMALLOC = 
-TCMALLOC = -ltcmalloc
-
 # Configure PGBC Options
 # COEFF_BITS defines the length of the coefficents. If you need large coefficient fields
 # you should choose 32. If you want to get the most performance, you can choose 8. But
@@ -37,13 +30,23 @@ PGBC_USE_SSE=1
 # PGBC_SORTING defines the sorting for the reduction, the behaviour only changes if this
 # value is set to one. Further sortings may follow
 PGBC_SORTING=1
+# Allow post reduction if simplify is used.
+PGBC_POST_REDUCE=0
+# Enable MPI (you also should configure CXX to use mpic++)
+PGBC_WITH_MPI=0
 
+# Set your Compiler. Attention you need a compiler which supports the  C++11 standard
+CXX = /usr/bin/g++
+AR = /usr/bin/ar
+# Enable the following if you want to use google's tcmalloc
+TCMALLOC = 
+#TCMALLOC = -ltcmalloc
 
 # Configure CXXFLAGS. 
 # the following CXXFLAGS are for the GNU COMPILER:
-#CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -std=c++0x
+CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -std=c++0x
 # Possible FLAGS:
-CXXFLAGS = -fPIC -Wall -fopenmp -pipe -std=c++0x -march=native -O3
+#CXXFLAGS = -fPIC -Wall -fopenmp -pipe -std=c++0x -march=native -O3
 # DEBUG FLAGS:
 #CXXFLAGS = -fPIC -Wall -fopenmp -pipe -std=c++0x -pg -g -gdwarf-2
 
@@ -54,8 +57,14 @@ LIBRARY = ../lib/libf4.a
 # You shouldn't need to modify the following
 ###
 
+ifeq ($(PGBC_WITH_MPI),1)
+	BOOSTMPI=-lboost_serialization -lboost_mpi
+else
+	BOOSTMPI=
+endif
+
 # Combine compile time options with compile time optimizations
-CXXFLAGS += -D'PGBC_COEFF_BITS=$(PGBC_COEFF_BITS)' -D'PGBC_USE_SSE=$(PGBC_USE_SSE)' -D'PGBC_SORTING=$(PGBC_SORTING)'
+CXXFLAGS += -D'PGBC_COEFF_BITS=$(PGBC_COEFF_BITS)' -D'PGBC_USE_SSE=$(PGBC_USE_SSE)' -D'PGBC_SORTING=$(PGBC_SORTING)' -D'PGBC_POST_REDUCE=$(PGBC_POST_REDUCE)' -D'PGBC_WITH_MPI=$(PGBC_WITH_MPI)'
 
 # Below you find some generic make rules ...
 dummy:
@@ -65,7 +74,7 @@ dummy:
 	$(CXX) $(CXXFLAGS) -c $<
 
 %.bin: %.C $(LIBRARY)
-	$(CXX) $(CXXFLAGS) -o $(<:%.C=%.bin) $< $(LIBRARY) -lboost_regex -ltbb $(TCMALLOC)
+	$(CXX) $(CXXFLAGS) -o $(<:%.C=%.bin) $< $(LIBRARY) -lboost_regex -ltbb $(TCMALLOC) $(BOOSTMPI)
 
 objclean:
 	rm -f $(OBJ)

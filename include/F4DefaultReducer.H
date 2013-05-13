@@ -1,4 +1,8 @@
-/**********************
+/**
+ *  This file includes the headers for the 'defaultReducer' which implements the algorithm as described
+ *  in http://link.springer.com/chapter/10.1007/978-3-642-32973-9_22 
+ *
+ ***********************
  *
  *  This file is part of parallelGBC, a parallel groebner basis computation tool.
  *
@@ -32,6 +36,7 @@
 #include "../include/F4Reducer.H"
 #include "../include/F4Algorithm.H"
 #include "../include/F4Simplify.H"
+#include "../include/F4SimplifyDB.H"
 
 namespace parallelGBC {
 
@@ -60,6 +65,7 @@ namespace parallelGBC {
 			factors.push_back( f );
 		}
 
+	
 		int32_t target(size_t i) {
 			return targets[i];
 		}
@@ -78,19 +84,38 @@ namespace parallelGBC {
 		size_t size() {
 			return targets.size();
 		}
+
+		void clear() {
+			targets.clear();
+			opers.clear();
+			factors.clear();
+		}
+
+    template<class Archive> void serialize(Archive & ar, const unsigned int version)
+    {   
+					ar & targets;
+					ar & opers;
+					ar & factors;
+    }
 	};
 
 	class F4DefaultReducer : public virtual F4Reducer {
 		public:
-			bool doSimplify;
+			int doSimplify;
 			size_t reduceBlockSize;
 
 			std::vector<std::pair<uint32_t, uint32_t> > newPivots;
 
+			
+			// this will become the 'real' part
+			F4SimplifyDB* simplifyDB;
+			std::vector<std::pair<size_t, Term> > rowOriginDB;
+			
+			// remains to make comparison possible
 			F4Simplify* simplify;
-
 			std::vector<std::pair<Term, Polynomial> > rowOrigin;
-			tbb::concurrent_vector<tbb::concurrent_vector<std::pair<uint32_t, coeffType> > > savedRows; 
+
+			std::vector<std::vector<std::pair<uint32_t, coeffType> > > savedRows; 
 			std::vector<uint32_t> termMapping;
 
 			/**
@@ -129,6 +154,7 @@ namespace parallelGBC {
 			 * blocking operations.
 			 */
 			std::vector<F4Operations > ops;
+			
 			/**
 			 * The dense representation of the matrix entries in the non pivot part. The operations of 'ops' will be executed
 			 * on this matrix
@@ -155,18 +181,29 @@ namespace parallelGBC {
 			 */
 			std::vector<bool> empty;
 
-			F4DefaultReducer(F4* f4, bool doSimplify = false, int reduceBlockSize = 1024) : F4Reducer(f4), doSimplify(doSimplify), reduceBlockSize(reduceBlockSize) {
+#if PGBC_WITH_MPI == 1
+      std::vector<tbb::concurrent_vector<std::pair<uint32_t, std::pair<coeffType, uint32_t> > > > toSend;
+			std::vector<std::vector<std::pair<uint32_t, std::pair<coeffType, uint32_t> > > > toSendCopy; // required :-(
+#endif
+
+			F4DefaultReducer(F4* f4, int doSimplify = 0, int reduceBlockSize = 1024) : F4Reducer(f4), doSimplify(doSimplify), reduceBlockSize(reduceBlockSize) {
 				termCounter = 0;
 				upper = 0;
 				terms = std::map<Term, uint32_t, Term::comparator>( Term::comparator(f4->O, true) );
 				pivotsOrdered = std::map<Term, uint32_t, Term::comparator>( Term::comparator(f4->O, true) );
-				if(doSimplify) {
+				if(doSimplify == 2) {
+					simplifyDB = new F4SimplifyDB(f4->O);
+				} else if(doSimplify == 1) {
 					simplify = new F4Simplify();
 				}
 			}
 
 			~F4DefaultReducer() {
-				delete simplify;
+				if(doSimplify == 2) {
+					delete simplifyDB;
+				} else if(doSimplify == 1) {
+					delete simplify;
+				}
 			}
 
 
@@ -187,9 +224,22 @@ namespace parallelGBC {
 			 */
 			void prepare();
 
+			virtual void init() {
+				if(doSimplify == 2) {
+					for(size_t i = 0; i < f4->groebnerBasis.size(); i++) {
+						Term one =  f4->groebnerBasis[i].LT().getOne();
+						simplifyDB->insert(i, one, f4->groebnerBasis[i]);
+					}
+				}
+			}
+
 			virtual void reduce(std::vector<Polynomial>& polys, degreeType currentDegree);
 
 			virtual void addSPolynomial(size_t i, size_t j, Term& lcm);
+
+			virtual void client();
+
+			virtual void finish();
 
 			/**
 			 * Process a S-Polynomial (ir*current) and do the symbolic preprocessing by adding required

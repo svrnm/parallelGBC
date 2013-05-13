@@ -62,9 +62,13 @@ namespace parallelGBC {
 			 */
 			double updateTime;
 			/**
-			 *
+			 * Stores the time of all simplify update steps
 			 */
 			double simplifyTime;
+			/**
+			 * Stores the time which is overhead by using MPI.
+			 */
+			double mpiTime;
 
 			F4Logger(int verbosity, std::ostream* out) : verbosity(verbosity), out(out) {
 				reductionTime = 0;

@@ -16,10 +16,7 @@
  */
 #include "../include/F4Simplify.H"
 namespace parallelGBC {
-
-
-
-	//	std::pair<Term, Polynomial> 
+	
 	void F4Simplify::search(Term& t, Polynomial& f) {
 		tbb::concurrent_unordered_map<Polynomial, tbb::concurrent_unordered_map<Term, Polynomial, std::hash<Term> > >::iterator it = F.find( f );
 		if(it != F.end()) {
@@ -57,12 +54,10 @@ namespace parallelGBC {
 				}
 			}
 		}
-		//return std::make_pair(t,f);
 	}
 
 
 	void F4Simplify::insert(Term& t, Polynomial& f, Polynomial& p)  {
-		if(f == p) { return; }
 		F[f][t] = p;
 	}
 }

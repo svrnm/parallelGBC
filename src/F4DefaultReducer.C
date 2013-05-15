@@ -19,6 +19,9 @@
 #include <stdio.h>
 #include <unordered_map>
 #include <unordered_set>
+#if PGBC_PARALLEL_SETUP == 0
+#define TBB_PREVIEW_SERIAL_SUBSET 1 
+#endif
 #include <tbb/parallel_for.h>
 #include <tbb/task_scheduler_init.h>
 #include <sstream>

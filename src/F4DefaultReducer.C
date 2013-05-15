@@ -156,7 +156,11 @@ namespace parallelGBC {
 			std::vector<size_t> prefixes(rs.size(), 0);
 			std::vector<size_t> suffixes(rs.size(), 0);
 
+#if PGBC_PARALLEL_SETUP == 1
 			tbb::parallel_for(blocked_range<size_t>(start, end), F4SetupDenseRow(*this, rs, start));
+#else
+			tbb::serial::parallel_for(blocked_range<size_t>(start, end), F4SetupDenseRow(*this, rs, start));
+#endif
 
 			// Iterate over all matrix rows
 			for(size_t i = 0; i < rs.size(); i++){
@@ -271,7 +275,13 @@ namespace parallelGBC {
 #if PGBC_WITH_MPI == 0
 				rightSide.grow_to_at_least( termsUnordered.size() + current.size() );
 #endif
+
+#if PGBC_PARALLEL_SETUP == 1
 				tbb::parallel_for(blocked_range<size_t>((i > upper || i % 2 == 0 ? 1 : 0), current.size()), F4SetupRow(*this, current, ir, i));
+#else
+				tbb::serial::parallel_for(blocked_range<size_t>((i > upper || i % 2 == 0 ? 1 : 0), current.size()), F4SetupRow(*this, current, ir, i));
+#endif
+
 #if PGBC_WITH_MPI == 1
 				double mpiTimer = F4Logger::seconds();
 				for(size_t k = 0; k < toSend.size(); k++) {

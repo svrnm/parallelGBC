@@ -26,8 +26,10 @@
 #include <stdint.h>
 #include <vector>
 #include <iostream>
+#if PGBC_USE_SSE == 1
 #include <xmmintrin.h>
 #include <mmintrin.h>
+#endif
 #include <tbb/concurrent_vector.h>
 
 /** 
@@ -145,7 +147,9 @@ class CoeffField
 		 * The SSE implementation of mulSub(coeffRow...) requires a vector which contains
 		 * __COEFF_FIELD_INTVECSIZE times the value of modn.
 		 */
+#if PGBC_USE_SSE == 1
 		__m128i modnvec;
+#endif
 
 	public:
 		/**

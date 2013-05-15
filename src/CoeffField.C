@@ -25,7 +25,9 @@ CoeffField::CoeffField(coeffType modn) : modn(modn)
 {
 	// If SSE is enabled this vector is needed to do computations in the
 	// coefficient field.
+#if PGBC_USE_SSE == 1
 	modnvec = __COEFF_FIELD_VECSET1( modn );
+#endif
 
 	// Preassign exps, logs and invs. The
 	// following initalization code is inspired by Singular (kernel/modulop.cc, function npInitChar)

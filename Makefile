@@ -1,4 +1,4 @@
-# Makefile for parallelGBC 0.8 and later
+# Makefile for parallelGBC 0.9 and later
 # 
 # Just execute "make" to compile the tool. If you want to configure
 # compiler options, please change Makefile.rules. If you need more

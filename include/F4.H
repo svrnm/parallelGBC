@@ -21,6 +21,7 @@
 */
 #ifndef F4_ALL_H
 #define F4_ALL_H
+#include "Definitions.H" // This file will be created by make definitions!
 #include "F4Utils.H"
 #include "CoeffField.H"
 #include "TOrdering.H"

@@ -66,16 +66,24 @@ else
 endif
 
 # Combine compile time options with compile time optimizations
-CXXFLAGS += -D'PGBC_COEFF_BITS=$(PGBC_COEFF_BITS)' -D'PGBC_USE_SSE=$(PGBC_USE_SSE)' -D'PGBC_SORTING=$(PGBC_SORTING)' -D'PGBC_POST_REDUCE=$(PGBC_POST_REDUCE)' -D'PGBC_WITH_MPI=$(PGBC_WITH_MPI)' -D'PGBC_PARALLEL_SETUP=$(PGBC_PARALLEL_SETUP)'
+DEFINITIONS = -D'PGBC_COEFF_BITS=$(PGBC_COEFF_BITS)' -D'PGBC_USE_SSE=$(PGBC_USE_SSE)' -D'PGBC_SORTING=$(PGBC_SORTING)' -D'PGBC_POST_REDUCE=$(PGBC_POST_REDUCE)' -D'PGBC_WITH_MPI=$(PGBC_WITH_MPI)' -D'PGBC_PARALLEL_SETUP=$(PGBC_PARALLEL_SETUP)'
 
 # Below you find some generic make rules ...
 dummy:
 	echo "Please use the Makefile in the main directory or specify a target"
 
 %.o: %.C ../include/%.H ../Makefile.rules
-	$(CXX) $(CXXFLAGS) -c $<
+	$(CXX) $(CXXFLAGS) $(DEFINITIONS) -c $<
 
-%.bin: %.C $(LIBRARY)
+definitions:
+	echo "#define PGBC_COEFF_BITS $(PGBC_COEFF_BITS)" > ../include/Definitions.H
+	echo "#define PGBC_USE_SSE $(PGBC_USE_SSE)" >> ../include/Definitions.H
+	echo "#define PGBC_SORTING $(PGBC_SORTING)" >> ../include/Definitions.H
+	echo "#define PGBC_POST_REDUCE $(PGBC_POST_REDUCE)" >> ../include/Definitions.H
+	echo "#define PGBC_WITH_MPI $(PGBC_WITH_MPI)" >> ../include/Definitions.H
+	echo "#define PGBC_PARALLEL_SETUP $(PGBC_PARALLEL_SETUP)" >> ../include/Definitions.H
+
+%.bin: %.C $(LIBRARY) definitions
 	$(CXX) $(CXXFLAGS) -o $(<:%.C=%.bin) $< $(LIBRARY) -lboost_regex -ltbb $(TCMALLOC) $(BOOSTMPI)
 
 objclean:

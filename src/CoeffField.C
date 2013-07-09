@@ -34,10 +34,8 @@ CoeffField::CoeffField(coeffType modn) : modn(modn)
 	exps.assign(modn, 0);
 	logs.assign(modn, 0);
 	invs.assign(modn, 0);
-
 	logs[0] = 0;
 	exps[0] = 1;
-
 	// The following procedure only works if modn is greater than 2
 	if(modn > 2) {
 		coeffType i;

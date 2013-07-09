@@ -2,4 +2,5 @@ test/*.bin
 gmon.out
 *.C.swp
 *.H.swp
+include/Definitions.H
 input/equations.txt

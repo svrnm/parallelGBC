@@ -55,6 +55,7 @@ clean:
 	$(MAKE) -C src objclean
 	$(MAKE) -C test objclean
 	rm -f lib/*.a
+	rm -f include/Definitions.H
 
 # Do primitive checks
 check: test

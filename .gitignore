@@ -5,3 +5,4 @@ gmon.out
 *.H.swp
 include/Definitions.H
 input/equations.txt
+build

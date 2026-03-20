@@ -30,13 +30,32 @@
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../include/F4.H"
-#include <iostream>
+#include <boost/regex.hpp>
+#include <charconv>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
+#include <iostream>
 #include <sstream>
-#include <boost/regex.hpp> 
 using namespace boost;
 using namespace std;
 using namespace parallelGBC;
+
+namespace {
+
+/** Parse argv token as signed decimal; true iff the whole string parses and value is non-zero. */
+bool parseIntFlagNonzero(const char* s) {
+	if (!s)
+		return false;
+	int v = 0;
+	const char* end = s + std::strlen(s);
+	auto r = std::from_chars(s, end, v);
+	if (r.ec != std::errc{} || r.ptr != end)
+		return false;
+	return v != 0;
+}
+
+} // namespace
 
 int main(int argc, char* argv[]) {
 	// Input stuff, example below ...
@@ -48,7 +67,7 @@ int main(int argc, char* argv[]) {
 	// Is there a file provided?
 	if(argc < 2) {
 		cerr << "Please provide a file and a optional number of threads.\n";
-		exit(-1);
+		return EXIT_FAILURE;
 	}
 	// If the second parameter provides the number of
 	// threads, use it, if not use the default value.
@@ -80,11 +99,11 @@ int main(int argc, char* argv[]) {
 	}
 	bool verify = false;
 	if(argc > 8) {
-		verify = (atoi(argv[8]) != 0);
+		verify = parseIntFlagNonzero(argv[8]);
 	}
 	bool verifyProgress = false;
 	if(argc > 9) {
-		verifyProgress = (atoi(argv[9]) != 0);
+		verifyProgress = parseIntFlagNonzero(argv[9]);
 	}
 	// Read the provided input file. Example still below.
 	fstream filestr (argv[1], fstream::in);
@@ -96,7 +115,7 @@ int main(int argc, char* argv[]) {
 		}
 	} else {
 		cerr << "Could not open file\n";
-		exit(-1);
+		return EXIT_FAILURE;
 	}
 	// Count the indeterminants automaticly
 	boost::regex expression("x\\[(\\d*)\\]");
@@ -151,7 +170,7 @@ int main(int argc, char* argv[]) {
 				cerr << "Buchberger criterion: verified\n";
 			} else {
 				cerr << "Buchberger criterion: FAILED\n";
-				exit(1);
+				return EXIT_FAILURE;
 			}
 		}
 		if(printGB > 0)
@@ -172,6 +191,7 @@ int main(int argc, char* argv[]) {
 	// Clean up your memory
 	delete o;
 	delete cf;
+	return EXIT_SUCCESS;
 }
 
 

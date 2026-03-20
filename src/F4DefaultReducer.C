@@ -25,8 +25,12 @@
 #include <tbb/parallel_for.h>
 #include <sstream>
 
-using namespace std;
 using namespace tbb;
+
+using std::make_pair;
+using std::map;
+using std::pair;
+using std::vector;
 
 namespace parallelGBC {
 

@@ -23,8 +23,15 @@
 #include <tbb/global_control.h>
 #include <sstream>
 
-using namespace std;
 using namespace tbb;
+
+using std::for_each;
+using std::max;
+using std::pair;
+using std::set;
+using std::sort;
+using std::swap;
+using std::vector;
 
 namespace parallelGBC {
 

@@ -22,8 +22,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef F4_ALGORITHM_H
-#define F4_ALGORITHM_H
+#pragma once
 #include <set>
 #include <vector>
 #include <map>
@@ -225,4 +224,3 @@ namespace parallelGBC {
 			std::vector<Polynomial> compute(std::vector<Polynomial>& generators);
 	};
 }
-#endif

@@ -16,8 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef F4_SIMPLIFY_H
-#define F4_SIMPLIFY_H
+#pragma once
 #include <sys/time.h>
 #include <iostream>
 #include <sys/types.h>
@@ -41,4 +40,3 @@ namespace parallelGBC {
 			void insert(Term& t, Polynomial& f, Polynomial& p);
 	};
 }
-#endif

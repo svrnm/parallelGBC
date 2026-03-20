@@ -55,12 +55,12 @@ TCMALLOC =
 # the following CXXFLAGS are for the GNU COMPILER:
 # Add Homebrew paths for TBB and Boost (macOS)
 HOMEBREW_PREFIX ?= $(shell brew --prefix 2>/dev/null || echo /opt/homebrew)
-CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -std=c++20 -I$(HOMEBREW_PREFIX)/include -I../simde
+CXXFLAGS = -fPIC -Wall -Wextra -Wno-unused-parameter -fopenmp -O2 -pipe -std=c++20 -I$(HOMEBREW_PREFIX)/include -I../simde
 LDFLAGS = -L$(HOMEBREW_PREFIX)/lib
 # Possible FLAGS:
-#CXXFLAGS = -fPIC -Wall -fopenmp -pipe -std=c++20 -march=native -O3
+#CXXFLAGS = -fPIC -Wall -Wextra -Wno-unused-parameter -fopenmp -pipe -std=c++20 -march=native -O3
 # DEBUG FLAGS:
-#CXXFLAGS = -fPIC -Wall -fopenmp -pipe -std=c++20 -pg -g -gdwarf-2
+#CXXFLAGS = -fPIC -Wall -Wextra -Wno-unused-parameter -fopenmp -pipe -std=c++20 -pg -g -gdwarf-2
 
 # Where the compiled (static) library will be stored.
 LIBRARY = ../lib/libf4.a

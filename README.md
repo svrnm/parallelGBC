@@ -75,6 +75,11 @@ to validate the functionality of parallelGBC.
 
 `make check` runs Buchberger verification by default on the **largest** thread count in `CORE_LIST` (`1 8` unless you override), only when the expected basis size |G| is at most `VERIFY_MAX_GB` (default **100**). S-pair reduction uses **OpenMP** inside the verifier. Use `VERIFY_GB=0 make check` to skip verification. Set `VERIFY_MAX_GB=0` to verify all sizes (can be very slow). Each verify run is capped by `VERIFY_TIMEOUT` seconds (default **600** for `make check`).
 
+Developer tooling
+-----------------
+* **`.clang-format`** — optional formatting for `.C` / `.H` (run `clang-format` manually or from your editor).
+* **`compile_commands.json`** — for clangd / IDEs: install [Bear](https://github.com/rizsotto/Bear), set `CXX` if needed, then run **`./scripts/gen-compile_commands.sh`** from the repo root (output is gitignored).
+
 Verbosity
 ---------
 Verbosity, which can be changed during runtime, nothing which should

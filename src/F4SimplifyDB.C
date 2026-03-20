@@ -16,8 +16,6 @@
  */
 #include "../include/F4SimplifyDB.H"
 
-using namespace std;
-
 namespace parallelGBC {
 
 	std::pair<Term, Polynomial> F4SimplifyDB::search(size_t i, Term& t, bool full) {
@@ -37,7 +35,7 @@ namespace parallelGBC {
 					}
 				}
 			} else {
-				vector<Term> divisors = t.divAllX();
+				std::vector<Term> divisors = t.divAllX();
 				for(size_t j = 0; j < divisors.size() && p == database[i].end(); j++) {
 					p = database[i].find(divisors[j]);
 				}

@@ -24,8 +24,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef T_MONOID_H
-#define T_MONOID_H
+#pragma once
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -190,4 +189,3 @@ class TMonoid {
 		 */
 		TMonoid(const TMonoid& m) : N(m.N) { }
 };
-#endif

@@ -19,8 +19,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef F4_ALL_H
-#define F4_ALL_H
+#pragma once
 #include "Definitions.H" // This file will be created by make definitions!
 #include "F4Utils.H"
 #include "CoeffField.H"
@@ -32,4 +31,3 @@
 #include "F4Reducer.H"
 #include "F4DefaultReducer.H"
 #include "BuchbergerVerify.H"
-#endif

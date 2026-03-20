@@ -6,8 +6,7 @@
  *
  * This file is part of parallelGBC.
  */
-#ifndef BUCHBERGER_VERIFY_H
-#define BUCHBERGER_VERIFY_H
+#pragma once
 #include "Polynomial.H"
 #include "TOrdering.H"
 
@@ -25,4 +24,3 @@ bool verifyBuchbergerCriterion(const std::vector<Polynomial>& G,
                                size_t progressStepPercent = 5);
 
 }
-#endif

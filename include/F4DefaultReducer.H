@@ -19,8 +19,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef F4_DEFAULTREDUCER_H
-#define F4_DEFAULTREDUCER_H
+#pragma once
 #include <set>
 #include <vector>
 #include <map>
@@ -349,4 +348,3 @@ namespace parallelGBC {
 		void operator() (tbb::blocked_range<size_t>& range) const { reducer.pReduceRange(rs, prefixes, suffixes, i, offset, range); }
 	};
 }
-#endif

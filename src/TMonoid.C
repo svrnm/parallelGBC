@@ -23,7 +23,6 @@
 #include <iostream>
 
 using namespace boost;
-using namespace std;
 
 TMonoid::TMonoid(size_t N) : N(N) { 
 	one = new TermInstance(this, N);
@@ -62,7 +61,7 @@ TMonoid::~TMonoid() {
 
 const TermInstance* TMonoid::createElement(TermInstance* t)
 {
-	pair<TermInstanceSet::iterator, bool> result = terms.insert(t);
+	std::pair<TermInstanceSet::iterator, bool> result = terms.insert(t);
 	if(!result.second) { 
 		delete t; 
 		return *(result.first);
@@ -71,28 +70,28 @@ const TermInstance* TMonoid::createElement(TermInstance* t)
 	}
 }
 
-const TermInstance* TMonoid::createElement(const vector<degreeType>& v) 
+const TermInstance* TMonoid::createElement(const std::vector<degreeType>& v) 
 {
 	std::vector<degreeType> c = v;
 	c.resize(N, 0);
 	return createElement(new TermInstance(this, c));
 }
 
-const TermInstance* TMonoid::createElement(const string& s, degreeType min) { 
+const TermInstance* TMonoid::createElement(const std::string& s, degreeType min) { 
 	//degreeType* v = (degreeType*)calloc(N, sizeof(degreeType));
-	vector<degreeType> v(N, 0);
+	std::vector<degreeType> v(N, 0);
 	if(s == "1") {
 		return one;
 	} else {
 		std::vector<std::string> strs;
 		std::vector<std::string> in_ex;
-		string s2 = boost::erase_all_copy(boost::erase_all_copy(boost::erase_all_copy(s, "*"), "^"), "[");
+		std::string s2 = boost::erase_all_copy(boost::erase_all_copy(boost::erase_all_copy(s, "*"), "^"), "[");
 		boost::split(strs, s2, boost::is_any_of("x"));
 		for(size_t i = 1; i < strs.size(); i++) {
 			boost::split(in_ex, strs[i], boost::is_any_of("]"));
 			if(in_ex[1] == "") { in_ex[1] = "1"; }
-			stringstream s1(in_ex[0]);
-			stringstream s2(in_ex[1]);
+			std::stringstream s1(in_ex[0]);
+			std::stringstream s2(in_ex[1]);
 			size_t in;
 			degreeType ex;
 			s1 >> in;

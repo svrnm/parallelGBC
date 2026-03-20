@@ -23,8 +23,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef T_ORDERING_H
-#define T_ORDERING_H
+#pragma once
 #include <string>
 #include "TMonoid.H"
 
@@ -144,4 +143,3 @@ class DegLexOrdering : public TOrdering
 	 */
 	virtual std::string name() const { return "DegLex"; }
 };
-#endif

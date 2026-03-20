@@ -21,8 +21,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef T_COEFF_FIELD_H
-#define T_COEFF_FIELD_H
+#pragma once
 #include <stdint.h>
 #include <vector>
 #include <iostream>
@@ -337,4 +336,3 @@ class CoeffField
 #endif
 		}
 };
-#endif

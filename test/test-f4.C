@@ -30,6 +30,7 @@
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../include/F4.H"
+#include <algorithm>
 #include <boost/regex.hpp>
 #include <charconv>
 #include <cstdlib>
@@ -37,9 +38,16 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+
 using namespace boost;
-using namespace std;
 using namespace parallelGBC;
+
+using std::cerr;
+using std::cout;
+using std::for_each;
+using std::fstream;
+using std::istringstream;
+using std::vector;
 
 namespace {
 

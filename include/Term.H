@@ -20,8 +20,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef TERM_H
-#define TERM_H
+#pragma once
 #include <stdlib.h>
 #include <string>
 #include "TMonoid.H"
@@ -314,5 +313,3 @@ namespace std
 
 
 std::ostream& operator<< (std::ostream &out, const Term& term);
-
-#endif

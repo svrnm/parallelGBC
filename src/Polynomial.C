@@ -21,7 +21,17 @@
 #include <boost/regex.hpp>
 
 using namespace boost;
-using namespace std;
+
+using std::istream;
+using std::istringstream;
+using std::make_pair;
+using std::map;
+using std::ostream;
+using std::ostringstream;
+using std::pair;
+using std::string;
+using std::stringstream;
+using std::vector;
 
 ostream& operator<< (ostream &out, const Polynomial &poly) 
 {

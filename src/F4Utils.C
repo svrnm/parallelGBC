@@ -18,16 +18,14 @@
 #include "../include/F4Utils.H"
 #include "../include/Polynomial.H"
 
-using namespace std;
-
-void printPolyMatrix(vector<Polynomial>& v, const TOrdering* O)
+void printPolyMatrix(std::vector<Polynomial>& v, const TOrdering* O)
 {
 
 	// Setup a term comparator which return true if a term a is greater than a term b
 	Term::comparator tog(O, true);
 
 	// Set which collects all terms used in v.
-	set<Term, Term::comparator> terms(tog);
+	std::set<Term, Term::comparator> terms(tog);
 
 
 	// Read in all terms.
@@ -39,7 +37,7 @@ void printPolyMatrix(vector<Polynomial>& v, const TOrdering* O)
 
 	// Print the matrix.
 	for(size_t i = 0; i < v.size(); i++) {
-		set<Term, Term::comparator>::iterator it = terms.begin();
+		std::set<Term, Term::comparator>::iterator it = terms.begin();
 		// Iterate over all values in the current row
 		for(size_t j = 0; j < v[i].size(); j++) {
 			// Each term which does not occure in the current polynomial

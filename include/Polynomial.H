@@ -26,8 +26,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef POLYNOMIAL_H
-#define POLYNOMIAL_H
+#pragma once
 #include <iostream>
 #include <vector>
 #include "../include/Term.H"
@@ -369,6 +368,3 @@ namespace std
    };
 }
 
-
-
-#endif

@@ -14,8 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef F4_SimplifyDB_H
-#define F4_SimplifyDB_H
+#pragma once
 #include <vector>
 #include <unordered_map>
 #include <tbb/concurrent_unordered_map.h>
@@ -46,4 +45,3 @@ namespace parallelGBC {
 	};
 
 }
-#endif

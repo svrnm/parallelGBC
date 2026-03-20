@@ -16,8 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef F4_LOGGER_H
-#define F4_LOGGER_H
+#pragma once
 #include <sys/time.h>
 #include <iostream>
 #include <sys/types.h>
@@ -87,4 +86,3 @@ namespace parallelGBC {
 
 	};
 }
-#endif

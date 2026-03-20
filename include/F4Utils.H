@@ -26,8 +26,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef F4_UTILS_H
-#define F4_UTILS_H
+#pragma once
 #include <vector>
 #include "Polynomial.H"
 
@@ -36,4 +35,3 @@
  * the column position of a given term.
  */
 void printPolyMatrix(std::vector<Polynomial>& v, const TOrdering* O);
-#endif

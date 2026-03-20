@@ -19,8 +19,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef F4_REDUCER_H
-#define F4_REDUCER_H
+#pragma once
 #include <set>
 #include <vector>
 #include <map>
@@ -66,4 +65,3 @@ namespace parallelGBC {
 			virtual void addSPolynomial(size_t i, size_t j, Term& lcm) = 0;
 	};
 }
-#endif

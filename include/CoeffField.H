@@ -25,12 +25,14 @@
 #include <stdint.h>
 #include <vector>
 #include <iostream>
+/* TBB must be included before SIMDe with native SSE aliases: TBB pulls in
+ * GCC's immintrin.h; if SIMDe defines _mm_* macros first, smmintrin.h breaks. */
+#include <tbb/concurrent_vector.h>
 #if PGBC_USE_SSE == 1
 /* Use SIMDe for portable SIMD: SSE on x86, NEON on ARM */
 #define SIMDE_ENABLE_NATIVE_ALIASES
 #include <simde/x86/sse2.h>
 #endif
-#include <tbb/concurrent_vector.h>
 
 /** 
  * Coefficents in the finite field are represented by 

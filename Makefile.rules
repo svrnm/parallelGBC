@@ -83,7 +83,7 @@ dummy:
 	echo "Please use the Makefile in the main directory or specify a target"
 
 %.o: %.C ../include/%.H ../Makefile.rules
-	$(CXX) $(CXXFLAGS) $(DEFINITIONS) -c $<
+	$(CXX) $(CXXFLAGS) $(DEFINITIONS) -MMD -MP -c $<
 
 definitions:
 	echo "#define PGBC_COEFF_BITS $(PGBC_COEFF_BITS)" > ../include/Definitions.H
@@ -97,4 +97,4 @@ definitions:
 	$(CXX) $(CXXFLAGS) $(DEFINITIONS) $(LDFLAGS) -o $(<:%.C=%.bin) $< $(LIBRARY) -lboost_regex -ltbb $(TCMALLOC) $(BOOSTMPI)
 
 objclean:
-	rm -f $(OBJ)
+	rm -f $(OBJ) $(OBJ:.o=.d)

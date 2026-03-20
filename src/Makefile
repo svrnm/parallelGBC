@@ -20,3 +20,8 @@ include	../Makefile.rules
 OBJ=CoeffField.o F4Algorithm.o F4DefaultReducer.o F4Simplify.o F4SimplifyDB.o F4Utils.o BuchbergerVerify.o Polynomial.o TMonoid.o TOrdering.o Term.o
 
 all: $(OBJ)
+
+-include $(OBJ:.o=.d)
+
+# Makefile.rules defines `dummy` first; keep bare `make -C src` building the library.
+.DEFAULT_GOAL := all

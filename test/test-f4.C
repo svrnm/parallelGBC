@@ -127,8 +127,8 @@ int main(int argc, char* argv[]) {
 	// ordering and have to bring in the coefficients to your coefficient field. Finally you have
 	// to normalize your polynomials. Remark: This step will be merged into f4(...) in a later release,
 	// doing everything twice shouldn't harm.
-	for_each(list.begin(), list.end(), boost::bind(std::mem_fn(&Polynomial::order), boost::placeholders::_1, o));
-	for_each(list.begin(), list.end(), boost::bind(std::mem_fn(&Polynomial::bringIn), boost::placeholders::_1, cf, false));
+	for_each(list.begin(), list.end(), [o](Polynomial& p) { p.order(o); });
+	for_each(list.begin(), list.end(), [cf](Polynomial& p) { p.bringIn(cf, false); });
 	
 	// Create the f4 computer.
 #if PGBC_WITH_MPI == 1

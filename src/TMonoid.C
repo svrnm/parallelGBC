@@ -18,7 +18,6 @@
 #include "../include/TMonoid.H"
 #include "../include/Term.H"
 #include <boost/algorithm/string.hpp>
-#include <boost/bind.hpp>
 #include <sstream>
 #include <algorithm>
 #include <iostream>

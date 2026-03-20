@@ -212,7 +212,7 @@ namespace parallelGBC {
 		sort(generators.begin(), generators.end(), Polynomial::comparator(O, true));		
 
 		//normalize
-		for_each(generators.begin(), generators.end(), boost::bind(std::mem_fn(&Polynomial::normalize), boost::placeholders::_1, field));
+		for_each(generators.begin(), generators.end(), [this](Polynomial& p) { p.normalize(field); });
 
 		updatePairs(generators, true);
 

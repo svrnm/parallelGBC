@@ -18,7 +18,6 @@
 #include <sstream>
 #include <map>
 #include <boost/algorithm/string.hpp>
-#include <boost/bind.hpp>
 #include <boost/regex.hpp>
 
 using namespace boost;

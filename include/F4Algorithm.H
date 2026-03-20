@@ -28,7 +28,6 @@
 #include <vector>
 #include <map>
 #include <algorithm>
-#include <boost/bind.hpp>
 #include <tbb/concurrent_unordered_map.h>
 #include <unordered_map>
 #include <tbb/concurrent_vector.h>

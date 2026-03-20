@@ -15,9 +15,9 @@
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <sstream>
-#include "../include/Term.H"
-#include "../include/Polynomial.H"
-#include "../include/F4Utils.H"
+#include "Term.H"
+#include "Polynomial.H"
+#include "F4Utils.H"
 
 
 

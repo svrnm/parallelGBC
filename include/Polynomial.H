@@ -29,9 +29,9 @@
 #pragma once
 #include <iostream>
 #include <vector>
-#include "../include/Term.H"
-#include "../include/CoeffField.H"
-#include "../include/TOrdering.H"
+#include "Term.H"
+#include "CoeffField.H"
+#include "TOrdering.H"
 
 /**
  * Monomials are a pair of a coefficient and a term, e.g.:

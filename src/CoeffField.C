@@ -18,7 +18,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../include/CoeffField.H"
+#include "CoeffField.H"
 #include <iostream>
 
 CoeffField::CoeffField(coeffType modn) : modn(modn)

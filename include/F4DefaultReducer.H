@@ -29,12 +29,12 @@
 #include <tbb/concurrent_vector.h>
 #include <tbb/blocked_range.h>
 #include <atomic>
-#include "../include/Term.H"
-#include "../include/Polynomial.H"
-#include "../include/F4Reducer.H"
-#include "../include/F4Algorithm.H"
-#include "../include/F4Simplify.H"
-#include "../include/F4SimplifyDB.H"
+#include "Term.H"
+#include "Polynomial.H"
+#include "F4Reducer.H"
+#include "F4Algorithm.H"
+#include "F4Simplify.H"
+#include "F4SimplifyDB.H"
 
 namespace parallelGBC {
 

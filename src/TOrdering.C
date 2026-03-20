@@ -14,8 +14,8 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "../include/TOrdering.H"
-#include "../include/Term.H"
+#include "TOrdering.H"
+#include "Term.H"
 
   int DegRevLexOrdering::cmp(const Term& a, const Term& b) const
   {   

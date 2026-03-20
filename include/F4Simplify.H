@@ -23,7 +23,7 @@
 #include <vector>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_vector.h>
-#include "../include/Polynomial.H"
+#include "Polynomial.H"
 
 namespace parallelGBC {
 

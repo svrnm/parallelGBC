@@ -15,8 +15,8 @@
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <set>
-#include "../include/F4Utils.H"
-#include "../include/Polynomial.H"
+#include "F4Utils.H"
+#include "Polynomial.H"
 
 void printPolyMatrix(std::vector<Polynomial>& v, const TOrdering* O)
 {

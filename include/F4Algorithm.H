@@ -32,11 +32,11 @@
 #include <tbb/concurrent_vector.h>
 #include <tbb/blocked_range.h>
 #include <atomic>
-#include "../include/Term.H"
-#include "../include/Polynomial.H"
-#include "../include/F4Utils.H"
-#include "../include/F4Logger.H"
-#include "../include/F4Reducer.H"
+#include "Term.H"
+#include "Polynomial.H"
+#include "F4Utils.H"
+#include "F4Logger.H"
+#include "F4Reducer.H"
 #if PGBC_WITH_MPI == 1
 #include <boost/mpi.hpp>
 #include <boost/serialization/utility.hpp>

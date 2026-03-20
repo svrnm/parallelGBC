@@ -47,6 +47,19 @@ and if you have several CPUs, you can use
 
 If you experience any problems, then have a look to the Makefile.rules or contact the author
 
+CMake (library + install)
+-----------------------
+Requires **CMake 3.16+**, same dependencies as above (OpenMP, Boost.Regex, TBB, SIMDe submodule).
+
+    cmake -B build -DCMAKE_BUILD_TYPE=Release
+    cmake --build build -j$(nproc)
+    ctest --test-dir build --output-on-failure
+
+Options (cache variables) mirror `Makefile.rules`: `PGBC_COEFF_BITS`, `PGBC_USE_SSE`, `PGBC_SORTING`, `PGBC_POST_REDUCE`, `PGBC_PARALLEL_SETUP`, and **`ENABLE_MPI`** (off by default).  
+Install: `cmake --install build --prefix /usr/local`. Installed CMake package: **`find_package(parallelGBC CONFIG)`** then **`target_link_libraries(... parallelGBC::f4)`**; public headers live under **`include/parallelGBC/`** (include **`parallelGBC/F4.H`**).
+
+Continuous integration: **`.github/workflows/ci.yml`** runs **GNU Make** + **`RunTests.sh`**, and a **CMake** build + **`ctest`** + install smoke test on **Ubuntu**.
+
 Testing
 -------
 Compute the degree reverse lexicographic gröbner basis of cyclic-8 with 4 threads
@@ -73,12 +86,12 @@ lexicographic term ordering (computed using ApCoCoA). Use
         
 to validate the functionality of parallelGBC.
 
-`make check` runs Buchberger verification by default on the **largest** thread count in `CORE_LIST` (`1 8` unless you override), only when the expected basis size |G| is at most `VERIFY_MAX_GB` (default **100**). S-pair reduction uses **OpenMP** inside the verifier. Use `VERIFY_GB=0 make check` to skip verification. Set `VERIFY_MAX_GB=0` to verify all sizes (can be very slow). Each verify run is capped by `VERIFY_TIMEOUT` seconds (default **600** for `make check`).
+`make check` compares output to `gb/*.txt` on the **smallest** thread count in `CORE_LIST` (reference is ApCoCoA-style). On the **largest** count it runs parallel F4 and, by default, Buchberger verification (OpenMP S-pairs), unless expected |G| exceeds `VERIFY_MAX_GB`. Use `VERIFY_GB=0 make check` to skip verification. Set `VERIFY_MAX_GB=0` to verify all sizes (can be very slow). Each verify run is capped by `VERIFY_TIMEOUT` (see `Makefile`). Defaults for `CORE_LIST`, `VERIFY_MAX_GB`, and `VERIFY_TIMEOUT` are in the top-level `Makefile`.
 
 Developer tooling
 -----------------
 * **`.clang-format`** — optional formatting for `.C` / `.H` (run `clang-format` manually or from your editor).
-* **`compile_commands.json`** — for clangd / IDEs: install [Bear](https://github.com/rizsotto/Bear), set `CXX` if needed, then run **`./scripts/gen-compile_commands.sh`** from the repo root (output is gitignored).
+* **`compile_commands.json`** — for clangd / IDEs: install [Bear](https://github.com/rizsotto/Bear), set `CXX` if needed, then run **`./scripts/gen-compile_commands.sh`** from the repo root (output is gitignored), or use **`cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`** with the CMake build.
 
 Verbosity
 ---------

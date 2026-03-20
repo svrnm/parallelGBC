@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../include/F4SimplifyDB.H"
+#include "F4SimplifyDB.H"
 
 namespace parallelGBC {
 

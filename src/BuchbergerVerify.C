@@ -3,7 +3,7 @@
  *
  * This file is part of parallelGBC.
  */
-#include "../include/BuchbergerVerify.H"
+#include "BuchbergerVerify.H"
 #include <atomic>
 #include <cstddef>
 #include <ctime>

@@ -29,9 +29,9 @@
 #include <tbb/concurrent_vector.h>
 #include <tbb/blocked_range.h>
 #include <atomic>
-#include "../include/Term.H"
-#include "../include/Polynomial.H"
-#include "../include/F4Logger.H"
+#include "Term.H"
+#include "Polynomial.H"
+#include "F4Logger.H"
 
 namespace parallelGBC {
 

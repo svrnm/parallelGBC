@@ -1,0 +1,67 @@
+# Build and regression-test parallelGBC (GNU Make + CMake).
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  make:
+    name: GNU Make + RunTests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            g++ \
+            libboost-regex-dev \
+            libtbb-dev
+
+      - name: Build (Make)
+        run: make clean && make -j$(nproc) CXX=g++
+
+      - name: Regression (RunTests.sh)
+        env:
+          VERIFY_GB: "1"
+          VERIFY_MAX_GB: "100"
+          VERIFY_TIMEOUT: "900"
+          CORE_LIST: "1 4"
+        run: ./test/RunTests.sh
+
+  cmake:
+    name: CMake + ctest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            g++ \
+            cmake \
+            libboost-regex-dev \
+            libtbb-dev
+
+      - name: Configure & build
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
+          cmake --build build -j$(nproc)
+
+      - name: ctest (gb/ regression)
+        working-directory: ${{ github.workspace }}
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Install smoke test
+        run: cmake --install build --prefix "$PWD/prefix" && test -f prefix/lib/libf4.a

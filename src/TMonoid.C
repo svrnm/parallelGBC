@@ -14,9 +14,9 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "../include/CoeffField.H"
-#include "../include/TMonoid.H"
-#include "../include/Term.H"
+#include "CoeffField.H"
+#include "TMonoid.H"
+#include "Term.H"
 #include <boost/algorithm/string.hpp>
 #include <sstream>
 #include <algorithm>

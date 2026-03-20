@@ -18,9 +18,9 @@
 #include <vector>
 #include <unordered_map>
 #include <tbb/concurrent_unordered_map.h>
-#include "../include/Term.H"
-#include "../include/Polynomial.H"
-#include "../include/TOrdering.H"
+#include "Term.H"
+#include "Polynomial.H"
+#include "TOrdering.H"
 
 namespace parallelGBC {
 

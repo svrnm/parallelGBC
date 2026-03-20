@@ -14,8 +14,8 @@
  *  You should have received a copy of the GNU General Public License
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../include/F4Algorithm.H"
-#include "../include/F4DefaultReducer.H"
+#include "F4Algorithm.H"
+#include "F4DefaultReducer.H"
 #include <stdio.h>
 #include <unordered_map>
 #include <unordered_set>

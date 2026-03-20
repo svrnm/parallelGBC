@@ -95,7 +95,7 @@ namespace parallelGBC {
 			 * Copy constructor. Attention, this may lead to misbehaviour if
 			 * O is not set to a real term ordering.
 			 */
-			comparator() : O(NULL) {}
+			comparator() : O(nullptr) {}
 
 			/**
 			 * Construct an instance of F4Pair::comparator using the given term ordering O

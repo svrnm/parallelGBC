@@ -27,7 +27,6 @@
 
 using namespace std;
 using namespace tbb;
-using namespace boost;
 
 namespace parallelGBC {
 

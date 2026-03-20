@@ -141,14 +141,14 @@ bool verifyBuchbergerCriterion(const std::vector<Polynomial>& G,
 	// Serial path (small instance, no OpenMP, or single thread)
 	size_t checkedPairs = 0;
 	size_t nextProgressPercent = (progressStepPercent == 0) ? 100 : progressStepPercent;
-	time_t lastHeartbeat = std::time(NULL);
+	time_t lastHeartbeat = std::time(nullptr);
 	if(showProgress) {
 		std::cerr << "Buchberger verify: 0/" << totalPairs << " pairs (0%)\n";
 	}
 	for(size_t i = 0; i < G_ordered.size(); i++) {
 		for(size_t j = i + 1; j < G_ordered.size(); j++) {
 			if(showProgress) {
-				time_t now = std::time(NULL);
+				time_t now = std::time(nullptr);
 				if(now - lastHeartbeat >= 5) {
 					std::cerr << "Buchberger verify: working on pair (" << i << "," << j
 					          << "), completed " << checkedPairs << "/" << totalPairs << " pairs\n";

@@ -272,7 +272,7 @@ class Term {
 				const TOrdering* O;
 				bool gt; // if greater
 
-				comparator() : O(NULL), gt(false) {}
+				comparator() : O(nullptr), gt(false) {}
 				comparator(TMonoid* M, bool gt = false) : O(M->lex()), gt(gt) {}
 				comparator(const TOrdering* O, bool gt = false) : O(O), gt(gt) {}
 

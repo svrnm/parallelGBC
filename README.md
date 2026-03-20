@@ -3,13 +3,13 @@ Parallel Groebner Basis Computation (beta 0.9)
 
 License
 -------
-This program is free software; see LICENSE.TXT for more details
+This program is free software; see LICENSE.txt for more details
 
 Reason
 ------
 This program provides an algorithm for parallel groebner basis computation.
 If you do not know, what a groebner basis is and what they are for,
-you may read on here [Scholarpedia](http://www.scholarpedia.org/article/Groebner_basis).
+you may read on here [Scholarpedia](https://www.scholarpedia.org/article/Groebner_basis).
 
 The code of the project is the result of my master thesis and a paper published to the
 Proceedings of CASC 2012 in Maribor. You can read the paper at [Springer Link](http://link.springer.com/chapter/10.1007/978-3-642-32973-9_22).
@@ -17,8 +17,8 @@ Proceedings of CASC 2012 in Maribor. You can read the paper at [Springer Link](h
 
 Requirements
 ------------
-* A compiler which supports C++11 (GCC4.4 should be fine, later versions are recommended)
-* [Intel TBB](http://threadingbuildingblocks.org/)
+* A compiler with **C++20** support (e.g. GCC 10+, Clang 11+)
+* [oneAPI Threading Building Blocks (oneTBB)](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onetbb.html) or compatible `libtbb`
 * [Boost](http://www.boost.org/), especially Boost.Regex (if you want to use the example binaries in test/)
 * OpenMP is optional but can speed up some more computations by parallelization
 * Several processors if you want to use the parallelization (dual or quadcores, etc.).
@@ -49,20 +49,20 @@ If you experience any problems, then have a look to the Makefile.rules or contac
 
 Testing
 -------
-Compute the degree reverse lexicogrpahic gröbner basis of cyclic-8 with 4 threads
+Compute the degree reverse lexicographic gröbner basis of cyclic-8 with 4 threads
 and a lot of verbosity and without printing the groebner basis. The block size of
 the matrix is 1024. For computation the simplify algorithm is not used, the sugar
 cube selection strategy is.
 
-    ./test/test-f4 ../input/cyclic8.txt 4 127 0 1024 0 1
+    ./test/test-f4.bin ../input/cyclic8.txt 4 127 0 1024 0 1
 
 In general you can compute with this binary using the following parameters:
 
-    ./test/test-f4 <input-file> <processors> <verbosity> <printGB> <blocksize> <doSimplify> <withSugar>
+    ./test/test-f4.bin <input-file> <processors> <verbosity> <printGB> <blocksize> <doSimplify> <withSugar>
 
 If you have compiled the binary using MPI you can compute distributed:
 
-		mpirun -np <slots> --host <hosts> ./test/test-f4 <...>
+		mpirun -np <slots> --host <hosts> ./test/test-f4.bin <...>
 
 Checking functionality
 ----------------------
@@ -73,7 +73,7 @@ lexicographic term ordering (computed using ApCoCoA). Use
         
 to validate the functionality of parallelGBC.
 
-`make check` runs Buchberger verification by default on the **largest** thread count in `CORE_LIST` (`1 8` unless you override). S-pair reduction uses **OpenMP** inside the verifier. Use `VERIFY_GB=0 make check` to skip verification. `VERIFY_MAX_GB` limits by expected |G| (`0` = no limit). Each case is capped by `VERIFY_TIMEOUT` seconds (default 7200 for `make check`).
+`make check` runs Buchberger verification by default on the **largest** thread count in `CORE_LIST` (`1 8` unless you override), only when the expected basis size |G| is at most `VERIFY_MAX_GB` (default **100**). S-pair reduction uses **OpenMP** inside the verifier. Use `VERIFY_GB=0 make check` to skip verification. Set `VERIFY_MAX_GB=0` to verify all sizes (can be very slow). Each verify run is capped by `VERIFY_TIMEOUT` seconds (default **600** for `make check`).
 
 Verbosity
 ---------

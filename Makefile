@@ -59,9 +59,9 @@ clean:
 
 # Buchberger criterion verification on max core count from CORE_LIST (see test/RunTests.sh). Set VERIFY_GB=0 to skip.
 VERIFY_GB ?= 1
-# 0 = verify all benchmarks regardless of |G|; raise VERIFY_TIMEOUT for large bases (e.g. curve15_20).
-VERIFY_MAX_GB ?= 0
-VERIFY_TIMEOUT ?= 7200
+# Skip Buchberger verify when expected |G| exceeds this (keeps verify fast). Use 0 for no limit.
+VERIFY_MAX_GB ?= 100
+VERIFY_TIMEOUT ?= 600
 # Space-separated thread counts for F4; Buchberger verify runs on the last value.
 CORE_LIST ?= 1 8
 

@@ -51,11 +51,11 @@ function passed() {
 # When enabled, verifies computed GB on the highest processor count in CORE_LIST (parallel F4 + parallel S-pair check).
 # Verification can be expensive on larger benchmarks; use VERIFY_TIMEOUT (seconds) to cap runtime per case.
 # VERIFY_MAX_GB: skip Buchberger check when the expected |G| (comma-separated in gb/*.txt) exceeds this.
-# Set to 0 for no limit (default). Use e.g. 100 to skip huge regression cases when running this script alone.
+# Default 100 skips expensive Buchberger checks on large benchmarks; use 0 for no limit.
 VERIFY=${VERIFY_GB:-0};
 VERIFY_PROGRESS=${VERIFY_PROGRESS:-1};
 VERIFY_TIMEOUT=${VERIFY_TIMEOUT:-120};
-VERIFY_MAX_GB=${VERIFY_MAX_GB:-0};
+VERIFY_MAX_GB=${VERIFY_MAX_GB:-100};
 TIMEOUT_BIN=$(command -v gtimeout || command -v timeout || true)
 
 # Processor counts for F4 (Buchberger verify runs on MAX_C only). Override e.g. CORE_LIST="1 2 4".

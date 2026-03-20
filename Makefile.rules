@@ -38,9 +38,14 @@ PGBC_WITH_MPI=0
 # Parallel matrix setup
 PGBC_PARALLEL_SETUP=1
 
-# Set your Compiler. Attention you need a compiler which supports the  C++11 standard
-#CXX = /usr/bin/g++
-CXX = /opt/homebrew/bin/g++-15
+# Default compiler (C++20). Apple clang does not support -fopenmp; prefer Homebrew GCC on macOS if installed.
+# Override anytime: `make CXX=clang++` (with libomp) or `export CXX=g++-15`.
+HOMEBREW_GCC := $(firstword $(wildcard /opt/homebrew/bin/g++-15 /opt/homebrew/bin/g++-14 /opt/homebrew/bin/g++-13 /usr/local/bin/g++-13 /usr/local/bin/g++-12))
+ifeq ($(HOMEBREW_GCC),)
+CXX ?= g++
+else
+CXX ?= $(HOMEBREW_GCC)
+endif
 AR = /usr/bin/ar
 # Enable the following if you want to use google's tcmalloc
 TCMALLOC = 
@@ -50,12 +55,12 @@ TCMALLOC =
 # the following CXXFLAGS are for the GNU COMPILER:
 # Add Homebrew paths for TBB and Boost (macOS)
 HOMEBREW_PREFIX ?= $(shell brew --prefix 2>/dev/null || echo /opt/homebrew)
-CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -std=c++0x -I$(HOMEBREW_PREFIX)/include -I../simde
+CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -std=c++20 -I$(HOMEBREW_PREFIX)/include -I../simde
 LDFLAGS = -L$(HOMEBREW_PREFIX)/lib
 # Possible FLAGS:
-#CXXFLAGS = -fPIC -Wall -fopenmp -pipe -std=c++0x -march=native -O3
+#CXXFLAGS = -fPIC -Wall -fopenmp -pipe -std=c++20 -march=native -O3
 # DEBUG FLAGS:
-#CXXFLAGS = -fPIC -Wall -fopenmp -pipe -std=c++0x -pg -g -gdwarf-2
+#CXXFLAGS = -fPIC -Wall -fopenmp -pipe -std=c++20 -pg -g -gdwarf-2
 
 # Where the compiled (static) library will be stored.
 LIBRARY = ../lib/libf4.a

@@ -57,6 +57,14 @@ clean:
 	rm -f lib/*.a
 	rm -f include/Definitions.H
 
+# Buchberger criterion verification on max core count from CORE_LIST (see test/RunTests.sh). Set VERIFY_GB=0 to skip.
+VERIFY_GB ?= 1
+# 0 = verify all benchmarks regardless of |G|; raise VERIFY_TIMEOUT for large bases (e.g. curve15_20).
+VERIFY_MAX_GB ?= 0
+VERIFY_TIMEOUT ?= 7200
+# Space-separated thread counts for F4; Buchberger verify runs on the last value.
+CORE_LIST ?= 1 8
+
 # Do primitive checks
 check: test
-	./test/RunTests.sh
+	VERIFY_GB=$(VERIFY_GB) VERIFY_MAX_GB=$(VERIFY_MAX_GB) VERIFY_TIMEOUT=$(VERIFY_TIMEOUT) CORE_LIST="$(CORE_LIST)" ./test/RunTests.sh

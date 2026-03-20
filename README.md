@@ -22,12 +22,18 @@ Requirements
 * [Boost](http://www.boost.org/), especially Boost.Regex (if you want to use the example binaries in test/)
 * OpenMP is optional but can speed up some more computations by parallelization
 * Several processors if you want to use the parallelization (dual or quadcores, etc.).
-* A processor which has SSE2, if not disable the SSE option in Makefile.rules.
+* [SIMDe](https://github.com/simd-everywhere/simde) (included as git submodule) for portable SIMD on x86 and ARM.
 * openmpi and Boost.MPI if you want to do distributed parallelization, if not disable the MPI option in Makefile.rules.
 
 Installation
 ------------
-If you need to configure some settings (SSE,MPI) just have a look into Makefile.rules
+Clone the repository and initialize the SIMDe submodule:
+
+    git clone --recursive <repository-url>
+    # or, if already cloned:
+    git submodule update --init
+
+If you need to configure some settings (SSE, MPI) just have a look into Makefile.rules
 
 		vim Makefile.rules
 
@@ -66,6 +72,8 @@ lexicographic term ordering (computed using ApCoCoA). Use
     'make check'
         
 to validate the functionality of parallelGBC.
+
+`make check` runs Buchberger verification by default on the **largest** thread count in `CORE_LIST` (`1 8` unless you override). S-pair reduction uses **OpenMP** inside the verifier. Use `VERIFY_GB=0 make check` to skip verification. `VERIFY_MAX_GB` limits by expected |G| (`0` = no limit). Each case is capped by `VERIFY_TIMEOUT` seconds (default 7200 for `make check`).
 
 Verbosity
 ---------

@@ -21,7 +21,6 @@
 #include <sys/time.h>
 #include <iostream>
 #include <sys/types.h>
-#include <sys/sysinfo.h>
 
 namespace parallelGBC {
 

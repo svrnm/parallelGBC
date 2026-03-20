@@ -23,7 +23,6 @@
 #define TBB_PREVIEW_SERIAL_SUBSET 1 
 #endif
 #include <tbb/parallel_for.h>
-#include <tbb/task_scheduler_init.h>
 #include <sstream>
 
 using namespace std;
@@ -223,7 +222,7 @@ namespace parallelGBC {
 					pivotOps[t].push_back( make_pair(i, coeff) );
 				} else {
 					if(!wontFound) {
-						uint32_t temp = termCounter.fetch_and_increment();
+						uint32_t temp = termCounter.fetch_add(1);
 						termsUnordered.insert( make_pair(t,temp) );
 					}
 					// Column -> (Entry, Row)

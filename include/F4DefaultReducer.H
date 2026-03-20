@@ -30,7 +30,7 @@
 #include <unordered_map>
 #include <tbb/concurrent_vector.h>
 #include <tbb/blocked_range.h>
-#include <tbb/atomic.h>
+#include <atomic>
 #include "../include/Term.H"
 #include "../include/Polynomial.H"
 #include "../include/F4Reducer.H"
@@ -139,7 +139,7 @@ namespace parallelGBC {
 			/**
 			 * A unordered copy of 'terms'
 			 */
-			tbb::atomic<uint32_t> termCounter;
+			std::atomic<uint32_t> termCounter;
 			tbb::concurrent_unordered_map<Term, uint32_t, std::hash<Term> > termsUnordered;
 
 			/**

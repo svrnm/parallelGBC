@@ -1,7 +1,7 @@
 /**
  *  Example and test file for parallelGBC. To use it execute
  *
- *  	# ./test-f4 input.txt <NUM_OF_PROCS>
+ *  	# ./test-f4 input.txt <NUM_OF_PROCS> [verbosity] [printGB] [blockSize] [doSimplify] [withSugar] [verify] [verifyProgress]
  *
  *  where input.txt is a file providing polynomials in one line, such as
  * 
@@ -34,8 +34,6 @@
 #include <fstream>
 #include <sstream>
 #include <boost/regex.hpp> 
-#include <tbb/task_scheduler_init.h>
-
 using namespace boost;
 using namespace std;
 using namespace parallelGBC;
@@ -80,6 +78,14 @@ int main(int argc, char* argv[]) {
 	if(argc > 7) {
 		istringstream( argv[7] ) >> withSugar;
 	}
+	bool verify = false;
+	if(argc > 8) {
+		verify = (atoi(argv[8]) != 0);
+	}
+	bool verifyProgress = false;
+	if(argc > 9) {
+		verifyProgress = (atoi(argv[9]) != 0);
+	}
 	// Read the provided input file. Example still below.
 	fstream filestr (argv[1], fstream::in);
 	std::string s,t;
@@ -121,8 +127,8 @@ int main(int argc, char* argv[]) {
 	// ordering and have to bring in the coefficients to your coefficient field. Finally you have
 	// to normalize your polynomials. Remark: This step will be merged into f4(...) in a later release,
 	// doing everything twice shouldn't harm.
-	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::order), _1, o));
-	for_each(list.begin(), list.end(), bind(mem_fn(&Polynomial::bringIn), _1, cf, false));
+	for_each(list.begin(), list.end(), boost::bind(std::mem_fn(&Polynomial::order), boost::placeholders::_1, o));
+	for_each(list.begin(), list.end(), boost::bind(std::mem_fn(&Polynomial::bringIn), boost::placeholders::_1, cf, false));
 	
 	// Create the f4 computer.
 #if PGBC_WITH_MPI == 1
@@ -140,6 +146,14 @@ int main(int argc, char* argv[]) {
 #if PGBC_WITH_MPI == 1
 	if(world.rank() == 0) {
 #endif
+		if(verify) {
+			if(verifyBuchbergerCriterion(result, cf, o, verifyProgress)) {
+				cerr << "Buchberger criterion: verified\n";
+			} else {
+				cerr << "Buchberger criterion: FAILED\n";
+				exit(1);
+			}
+		}
 		if(printGB > 0)
 		{
 			for(size_t i = 0; i < result.size(); i++) {

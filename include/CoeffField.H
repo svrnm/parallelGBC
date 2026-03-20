@@ -27,8 +27,9 @@
 #include <vector>
 #include <iostream>
 #if PGBC_USE_SSE == 1
-#include <xmmintrin.h>
-#include <mmintrin.h>
+/* Use SIMDe for portable SIMD: SSE on x86, NEON on ARM */
+#define SIMDE_ENABLE_NATIVE_ALIASES
+#include <simde/x86/sse2.h>
 #endif
 #include <tbb/concurrent_vector.h>
 
@@ -160,6 +161,7 @@ class CoeffField
 		 * This method sets up the tables exps, logs and invs.
 		 */
 		CoeffField(coeffType modn);
+		virtual ~CoeffField() = default;
 
 		/**
 		 * Multiplication of two coefficient types. The operation is done

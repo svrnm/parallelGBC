@@ -169,6 +169,16 @@ class Polynomial {
 		Polynomial mul(const Term& t) const;
 
 		/**
+		 * Return a + b (coefficients combined in field f). Result is ordered by O.
+		 */
+		static Polynomial add(const Polynomial& a, const Polynomial& b, const CoeffField* f, const TOrdering* O);
+
+		/**
+		 * Return a - b. Result is ordered by O.
+		 */
+		static Polynomial sub(const Polynomial& a, const Polynomial& b, const CoeffField* f, const TOrdering* O);
+
+		/**
 		 * Multply all terms of the polynomial with the given term 't'. The given polynomial is
 		 * changed to 'p*t'
 		 */
@@ -350,7 +360,7 @@ class MonomialComparator {
 namespace std
 {    
    template <>
-   struct hash<Polynomial> : public unary_function<Polynomial, size_t>
+   struct hash<Polynomial>
    {
        size_t operator()(const Polynomial& p) const
        {

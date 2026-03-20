@@ -30,7 +30,7 @@
 #include <unordered_map>
 #include <tbb/concurrent_vector.h>
 #include <tbb/blocked_range.h>
-#include <tbb/atomic.h>
+#include <atomic>
 #include "../include/Term.H"
 #include "../include/Polynomial.H"
 #include "../include/F4Logger.H"

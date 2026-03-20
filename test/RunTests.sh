@@ -1,4 +1,5 @@
 #!/bin/bash
+set -o pipefail
 
 ##
 # This file provides a test suite for the F4 implementation used in
@@ -46,8 +47,22 @@ function passed() {
 	echo -e ${PASSED}
 }
 
-# For 1 to 4 processors do ...
-for c in 1 2 4;
+# Optional Buchberger criterion verification (set VERIFY_GB=1 to enable).
+# When enabled, verifies computed GB on the highest processor count in CORE_LIST (parallel F4 + parallel S-pair check).
+# Verification can be expensive on larger benchmarks; use VERIFY_TIMEOUT (seconds) to cap runtime per case.
+# VERIFY_MAX_GB: skip Buchberger check when the expected |G| (comma-separated in gb/*.txt) exceeds this.
+# Set to 0 for no limit (default). Use e.g. 100 to skip huge regression cases when running this script alone.
+VERIFY=${VERIFY_GB:-0};
+VERIFY_PROGRESS=${VERIFY_PROGRESS:-1};
+VERIFY_TIMEOUT=${VERIFY_TIMEOUT:-120};
+VERIFY_MAX_GB=${VERIFY_MAX_GB:-0};
+TIMEOUT_BIN=$(command -v gtimeout || command -v timeout || true)
+
+# Processor counts for F4 (Buchberger verify runs on MAX_C only). Override e.g. CORE_LIST="1 2 4".
+CORE_LIST=${CORE_LIST:-"1 8"}
+MAX_C=$(echo "$CORE_LIST" | awk '{print $NF}')
+
+for c in $CORE_LIST;
 	do
 	echo -e "\nRunning tests with \033[1;34m${c} core(s)\033[0m:"
 	# For all files in gb/ do ...
@@ -59,8 +74,43 @@ for c in 1 2 4;
 		i=input/${f##"gb/"};
 		# Output the input file name
 		echo -en "${f##"gb/"} ... ";
-		# Run the test
-		./test/test-f4.bin $i $c 0 1 | diff -q - $f >> /dev/null && passed || failed
+		# Run the test (sort polynomials for comparison - GB element order can vary with parallel execution)
+		# When VERIFY_GB=1 and c is MAX_C, verify Buchberger criterion (unless |G| too large)
+		VERIFY_THIS=0
+		if [ "$VERIFY" != "0" ] && [ "$c" = "$MAX_C" ]; then
+			VERIFY_THIS=1
+			if [ "$VERIFY_MAX_GB" != "0" ]; then
+				EXPECTED_GB_N=$(head -1 "$f" | awk -F', ' '{print NF}')
+				if [ "$EXPECTED_GB_N" -gt "$VERIFY_MAX_GB" ]; then
+					VERIFY_THIS=0
+					echo -e "\033[1;33mverify skipped (expected |G|=${EXPECTED_GB_N} > VERIFY_MAX_GB=${VERIFY_MAX_GB})\033[0m"
+				fi
+			fi
+		fi
+		if [ "$VERIFY_THIS" = "1" ]; then
+			if [ -n "$TIMEOUT_BIN" ]; then
+				"$TIMEOUT_BIN" "${VERIFY_TIMEOUT}s" ./test/test-f4.bin $i $c 0 1 1024 0 1 1 "$VERIFY_PROGRESS" | awk -F', ' '{for(i=1;i<=NF;i++) print $i}' | sort > /tmp/pgbc_actual.$$
+			else
+				perl -e 'my $t=shift; my $pid=fork(); exit 125 unless defined $pid; if($pid==0){ exec @ARGV or exit 127; } my $deadline=time+$t; while(1){ my $r=waitpid($pid, 1); if($r==$pid){ exit($? >> 8); } if(time >= $deadline){ kill 9, $pid; waitpid($pid, 0); exit(124); } select undef,undef,undef,0.1; }' "$VERIFY_TIMEOUT" ./test/test-f4.bin $i $c 0 1 1024 0 1 1 "$VERIFY_PROGRESS" | awk -F', ' '{for(i=1;i<=NF;i++) print $i}' | sort > /tmp/pgbc_actual.$$
+			fi
+			CMD_STATUS=${PIPESTATUS[0]}
+			if [ $CMD_STATUS -eq 124 ] || [ $CMD_STATUS -eq 137 ] || [ $CMD_STATUS -eq 142 ]; then
+				echo -e "\033[1;33mverify timeout (${VERIFY_TIMEOUT}s)\033[0m";
+				failed
+				rm -f /tmp/pgbc_actual.$$ /tmp/pgbc_expected.$$
+				continue
+			fi
+			if [ $CMD_STATUS -ne 0 ]; then
+				failed
+				rm -f /tmp/pgbc_actual.$$ /tmp/pgbc_expected.$$
+				continue
+			fi
+		else
+			./test/test-f4.bin $i $c 0 1 | awk -F', ' '{for(i=1;i<=NF;i++) print $i}' | sort > /tmp/pgbc_actual.$$
+		fi
+		awk -F', ' '{for(i=1;i<=NF;i++) print $i}' $f | sort > /tmp/pgbc_expected.$$
+		diff -q /tmp/pgbc_actual.$$ /tmp/pgbc_expected.$$ >> /dev/null && passed || failed
+		rm -f /tmp/pgbc_actual.$$ /tmp/pgbc_expected.$$
 	done;
 done;
 

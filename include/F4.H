@@ -31,4 +31,5 @@
 #include "F4Algorithm.H"
 #include "F4Reducer.H"
 #include "F4DefaultReducer.H"
+#include "BuchbergerVerify.H"
 #endif

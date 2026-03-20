@@ -20,7 +20,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <tbb/parallel_for.h>
-#include <tbb/task_scheduler_init.h>
+#include <tbb/global_control.h>
 #include <sstream>
 
 using namespace std;
@@ -192,7 +192,7 @@ namespace parallelGBC {
 	vector<Polynomial> F4::compute(vector<Polynomial>& generators) 
 	{
 		vector<Polynomial> result;
-		tbb::task_scheduler_init init(threads);
+		tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, threads);
 
 		if(this->reducer == 0) {
 			this->reducer = new F4DefaultReducer(this, false, 1024);
@@ -212,7 +212,7 @@ namespace parallelGBC {
 		sort(generators.begin(), generators.end(), Polynomial::comparator(O, true));		
 
 		//normalize
-		for_each(generators.begin(), generators.end(), bind(mem_fn(&Polynomial::normalize), _1, field));
+		for_each(generators.begin(), generators.end(), boost::bind(std::mem_fn(&Polynomial::normalize), boost::placeholders::_1, field));
 
 		updatePairs(generators, true);
 

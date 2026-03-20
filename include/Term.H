@@ -49,8 +49,8 @@ class TermInstance {
 		}
 
 		void setDegree() {
-			degree = indets[0];
-			for(size_t k = 1; k < owner->N; k++) {
+			degree = 0;
+			for(size_t k = 0; k < owner->N; k++) {
 				degree += indets[k];
 			}
 		}		
@@ -303,7 +303,7 @@ class Term {
 namespace std
 {    
    template <>
-   struct hash<Term> : public unary_function<Term, size_t>
+   struct hash<Term>
    {
        size_t operator()(const Term& t) const
        {

@@ -21,7 +21,6 @@
 #include <sys/time.h>
 #include <iostream>
 #include <sys/types.h>
-#include <sys/sysinfo.h>
 #include <vector>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_vector.h>

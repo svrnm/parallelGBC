@@ -81,14 +81,14 @@ class TMonoid {
 		/**
 		 * Helper class, to compare two instances of TermInstance for equality
 		 */
-		struct TermInstanceEquals : std::binary_function<const TermInstance* const, const TermInstance* const , bool>
+		struct TermInstanceEquals
 		{
 			bool operator()(const TermInstance* const t1, const TermInstance* const t2) const ;
 		};
 		/**
 		 * Helper class, to retrieve the nash of a given TermInstance.
 		 */
-		struct TermInstanceHash : std::unary_function<const TermInstance* const, std::size_t>
+		struct TermInstanceHash
 		{
 			std::size_t operator()(const TermInstance* const t ) const;
 		};

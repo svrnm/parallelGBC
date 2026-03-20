@@ -16,6 +16,7 @@
  */
 #include "../include/Polynomial.H"
 #include <sstream>
+#include <map>
 #include <boost/algorithm/string.hpp>
 #include <boost/bind.hpp>
 #include <boost/regex.hpp>
@@ -153,6 +154,58 @@ void Polynomial::mulBy(const Term& t) {
 	for(size_t i = 0; i < size(); i++) {
 		terms[i] = t.mul(terms[i]);
 	}
+}
+
+Polynomial Polynomial::add(const Polynomial& a, const Polynomial& b, const CoeffField* f, const TOrdering* O) {
+	const int mod = f->modn;
+	std::map<Term, int, Term::comparator> combined{Term::comparator(O)};
+	for(size_t i = 0; i < a.size(); i++) {
+		int value = combined[a.terms[i]] + static_cast<int>(a.coeffs[i]);
+		value %= mod;
+		if(value < 0) { value += mod; }
+		combined[a.terms[i]] = value;
+	}
+	for(size_t i = 0; i < b.size(); i++) {
+		int value = combined[b.terms[i]] + static_cast<int>(b.coeffs[i]);
+		value %= mod;
+		if(value < 0) { value += mod; }
+		combined[b.terms[i]] = value;
+	}
+	std::vector<Monomial> ms;
+	for(auto it = combined.begin(); it != combined.end(); ++it) {
+		if(it->second != 0) {
+			ms.push_back(std::make_pair(static_cast<coeffType>(it->second), it->first));
+		}
+	}
+	Polynomial result(ms, false);
+	result.order(O);
+	return result;
+}
+
+Polynomial Polynomial::sub(const Polynomial& a, const Polynomial& b, const CoeffField* f, const TOrdering* O) {
+	const int mod = f->modn;
+	std::map<Term, int, Term::comparator> combined{Term::comparator(O)};
+	for(size_t i = 0; i < a.size(); i++) {
+		int value = combined[a.terms[i]] + static_cast<int>(a.coeffs[i]);
+		value %= mod;
+		if(value < 0) { value += mod; }
+		combined[a.terms[i]] = value;
+	}
+	for(size_t i = 0; i < b.size(); i++) {
+		int value = combined[b.terms[i]] - static_cast<int>(b.coeffs[i]);
+		value %= mod;
+		if(value < 0) { value += mod; }
+		combined[b.terms[i]] = value;
+	}
+	std::vector<Monomial> ms;
+	for(auto it = combined.begin(); it != combined.end(); ++it) {
+		if(it->second != 0) {
+			ms.push_back(std::make_pair(static_cast<coeffType>(it->second), it->first));
+		}
+	}
+	Polynomial result(ms, false);
+	result.order(O);
+	return result;
 }
 
 void Polynomial::normalize(const CoeffField* field) {

@@ -25,7 +25,8 @@
 # you should choose 32. If you want to get the most performance, you can choose 8. But
 # for most cases the default value of 16 should do it.
 PGBC_COEFF_BITS=16
-# PGBC_USE_SSE1 enables sse optimizations in the field arithmetics (currently requires GCC)
+# PGBC_USE_SSE enables SIMD optimizations in field arithmetic. Uses SIMDe for portability
+# (SSE on x86, NEON on ARM). Set to 1 for better performance on both architectures.
 PGBC_USE_SSE=1
 # PGBC_SORTING defines the sorting for the reduction, the behaviour only changes if this
 # value is set to one. Further sortings may follow
@@ -38,7 +39,8 @@ PGBC_WITH_MPI=0
 PGBC_PARALLEL_SETUP=1
 
 # Set your Compiler. Attention you need a compiler which supports the  C++11 standard
-CXX = /usr/bin/g++
+#CXX = /usr/bin/g++
+CXX = /opt/homebrew/bin/g++-15
 AR = /usr/bin/ar
 # Enable the following if you want to use google's tcmalloc
 TCMALLOC = 
@@ -46,7 +48,10 @@ TCMALLOC =
 
 # Configure CXXFLAGS. 
 # the following CXXFLAGS are for the GNU COMPILER:
-CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -std=c++0x
+# Add Homebrew paths for TBB and Boost (macOS)
+HOMEBREW_PREFIX ?= $(shell brew --prefix 2>/dev/null || echo /opt/homebrew)
+CXXFLAGS = -fPIC -Wall -fopenmp -O2 -pipe -std=c++0x -I$(HOMEBREW_PREFIX)/include -I../simde
+LDFLAGS = -L$(HOMEBREW_PREFIX)/lib
 # Possible FLAGS:
 #CXXFLAGS = -fPIC -Wall -fopenmp -pipe -std=c++0x -march=native -O3
 # DEBUG FLAGS:
@@ -66,7 +71,7 @@ else
 endif
 
 # Combine compile time options with compile time optimizations
-DEFINITIONS = -D'PGBC_COEFF_BITS=$(PGBC_COEFF_BITS)' -D'PGBC_USE_SSE=$(PGBC_USE_SSE)' -D'PGBC_SORTING=$(PGBC_SORTING)' -D'PGBC_POST_REDUCE=$(PGBC_POST_REDUCE)' -D'PGBC_WITH_MPI=$(PGBC_WITH_MPI)' -D'PGBC_PARALLEL_SETUP=$(PGBC_PARALLEL_SETUP)'
+DEFINITIONS = -D'PGBC_COEFF_BITS=$(PGBC_COEFF_BITS)' -D'PGBC_USE_SSE=$(PGBC_USE_SSE)' -D'PGBC_SORTING=$(PGBC_SORTING)' -D'PGBC_POST_REDUCE=$(PGBC_POST_REDUCE)' -D'PGBC_WITH_MPI=$(PGBC_WITH_MPI)' -D'PGBC_PARALLEL_SETUP=$(PGBC_PARALLEL_SETUP)' -DBOOST_BIND_GLOBAL_PLACEHOLDERS
 
 # Below you find some generic make rules ...
 dummy:
@@ -84,7 +89,7 @@ definitions:
 	echo "#define PGBC_PARALLEL_SETUP $(PGBC_PARALLEL_SETUP)" >> ../include/Definitions.H
 
 %.bin: %.C $(LIBRARY) definitions
-	$(CXX) $(CXXFLAGS) -o $(<:%.C=%.bin) $< $(LIBRARY) -lboost_regex -ltbb $(TCMALLOC) $(BOOSTMPI)
+	$(CXX) $(CXXFLAGS) $(DEFINITIONS) $(LDFLAGS) -o $(<:%.C=%.bin) $< $(LIBRARY) -lboost_regex -ltbb $(TCMALLOC) $(BOOSTMPI)
 
 objclean:
 	rm -f $(OBJ)

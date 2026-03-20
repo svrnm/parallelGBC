@@ -68,3 +68,8 @@ CORE_LIST ?= 1 8
 # Do primitive checks
 check: test
 	VERIFY_GB=$(VERIFY_GB) VERIFY_MAX_GB=$(VERIFY_MAX_GB) VERIFY_TIMEOUT=$(VERIFY_TIMEOUT) CORE_LIST="$(CORE_LIST)" ./test/RunTests.sh
+
+# Compare committed cyclic/katsura inputs to SymbolicData IntPS (needs network).
+.PHONY: verify-symbolicdata
+verify-symbolicdata:
+	python3 tools/verify_sd_against_inputs.py

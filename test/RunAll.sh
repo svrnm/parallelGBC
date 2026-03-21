@@ -17,6 +17,10 @@
 # Counter for the number of executed tests
 ACOUNT=0;
 declare -i ACOUNT;
+FCOUNT=0;
+declare -i FCOUNT;
+
+TEST_F4_BIN=${TEST_F4_BIN:-build/test-f4}
 
 # For 1 to 4 processors do ...
 c=$1;
@@ -32,7 +36,9 @@ do
 	# Output the input file name
 	echo -en "${i##"input/"} ... ";
 	# Run the test
-	./test/test-f4.bin $i $c $verbosity 0 1024 $simplify $sugar
+	if ! "$TEST_F4_BIN" "$i" "$c" "$verbosity" 0 1024 "$simplify" "$sugar"; then
+		FCOUNT=$FCOUNT+1
+	fi
 done;
 
 # If not all tests passed print a statistic how many tests failed.

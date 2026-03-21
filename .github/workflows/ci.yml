@@ -1,4 +1,4 @@
-# Build and regression-test parallelGBC (GNU Make + CMake).
+# Build, regression-test, and install smoke-test (CMake only).
 name: CI
 
 on:
@@ -8,6 +8,7 @@ on:
     branches: [main, master]
 
 jobs:
+<<<<<<< Updated upstream
   make:
     name: GNU Make + RunTests
     runs-on: ubuntu-latest
@@ -37,6 +38,9 @@ jobs:
         run: ./test/RunTests.sh
 
   cmake:
+=======
+  build:
+>>>>>>> Stashed changes
     name: CMake + ctest
     runs-on: ubuntu-latest
     steps:

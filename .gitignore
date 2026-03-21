@@ -6,3 +6,4 @@ gmon.out
 include/Definitions.H
 input/equations.txt
 build
+/lib/

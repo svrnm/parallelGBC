@@ -64,6 +64,21 @@ target_compile_definitions(f4 PUBLIC
 	PGBC_WITH_MPI=${_PGBC_MPI}
 	PGBC_PARALLEL_SETUP=${PGBC_PARALLEL_SETUP})
 
+# Apple Clang does not ship OpenMP; Homebrew's libomp lives outside the default search path.
+if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	execute_process(
+		COMMAND brew --prefix libomp
+		OUTPUT_VARIABLE _PGBC_LIBOMP_PREFIX
+		OUTPUT_STRIP_TRAILING_WHITESPACE
+		ERROR_QUIET
+		RESULT_VARIABLE _PGBC_BREW_LIBOMP_RC)
+	if(_PGBC_BREW_LIBOMP_RC EQUAL 0 AND EXISTS "${_PGBC_LIBOMP_PREFIX}/include/omp.h")
+		set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I${_PGBC_LIBOMP_PREFIX}/include")
+		set(OpenMP_CXX_LIB_NAMES "omp")
+		set(OpenMP_omp_LIBRARY "${_PGBC_LIBOMP_PREFIX}/lib/libomp.dylib")
+	endif()
+endif()
+
 find_package(OpenMP REQUIRED COMPONENTS CXX)
 find_package(Boost REQUIRED COMPONENTS regex)
 find_library(PGBC_TBB_LIBRARY NAMES tbb REQUIRED)

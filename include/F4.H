@@ -20,7 +20,7 @@
  *  along with parallelGBC.  If not, see <http://www.gnu.org/licenses/>.
 */
 #pragma once
-#include "Definitions.H" // This file will be created by make definitions!
+#include "Definitions.H" // CMake generates this from cmake/Definitions.H.in.
 #include "F4Utils.H"
 #include "CoeffField.H"
 #include "TOrdering.H"

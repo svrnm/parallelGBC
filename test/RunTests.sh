@@ -52,7 +52,7 @@ function passed() {
 # When enabled, verifies computed GB on the highest processor count in CORE_LIST (parallel F4 + parallel S-pair check).
 # Verification can be expensive on larger benchmarks; use VERIFY_TIMEOUT (seconds) to cap runtime per case.
 # VERIFY_MAX_GB: skip Buchberger check when the expected |G| (comma-separated in gb/*.txt) exceeds this.
-# 0 = no limit. Makefile sets 0 for make check; use 100 here when running the script alone to skip huge cases.
+# 0 = no limit. CI sets a cap (e.g. 100); use 0 to verify all sizes (can be very slow).
 VERIFY=${VERIFY_GB:-0};
 VERIFY_PROGRESS=${VERIFY_PROGRESS:-1};
 VERIFY_TIMEOUT=${VERIFY_TIMEOUT:-120};
@@ -64,8 +64,8 @@ CORE_LIST=${CORE_LIST:-"1 8"}
 MIN_C=$(echo "$CORE_LIST" | awk '{print $1}')
 MAX_C=$(echo "$CORE_LIST" | awk '{print $NF}')
 
-# test-f4 executable (default: in-tree Makefile build). Override for CMake, e.g. TEST_F4_BIN="$PWD/build/test-f4"
-TEST_F4_BIN=${TEST_F4_BIN:-test/test-f4.bin}
+# test-f4 executable (default: CMake build tree). Override if needed.
+TEST_F4_BIN=${TEST_F4_BIN:-build/test-f4}
 
 for c in $CORE_LIST;
 	do

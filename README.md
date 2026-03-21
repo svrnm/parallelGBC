@@ -1,125 +1,164 @@
-Parallel Groebner Basis Computation (beta 0.9)
-=======
+# parallelGBC
 
-License
--------
-This program is free software; see LICENSE.txt for more details
+Parallel Gröbner basis computation
 
-Reason
-------
-This program provides an algorithm for parallel groebner basis computation.
-If you do not know, what a groebner basis is and what they are for,
-you may read on here [Scholarpedia](https://www.scholarpedia.org/article/Groebner_basis).
+## About
 
-The code of the project is the result of my master thesis and a paper published to the
-Proceedings of CASC 2012 in Maribor. You can read the paper at [Springer Link](http://link.springer.com/chapter/10.1007/978-3-642-32973-9_22).
+This project implements a parallel algorithm for Gröbner basis computation. Background: [Groebner basis — Scholarpedia](https://www.scholarpedia.org/article/Groebner_basis).
 
+The code comes from a master’s thesis and a paper in the *Proceedings of CASC 2012* (Maribor): [Springer chapter](http://link.springer.com/chapter/10.1007/978-3-642-32973-9_22).
 
-Requirements
-------------
-* A compiler with **C++20** support (e.g. GCC 10+, Clang 11+)
-* [oneAPI Threading Building Blocks (oneTBB)](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onetbb.html) or compatible `libtbb`
-* [Boost](http://www.boost.org/), especially Boost.Regex (if you want to use the example binaries in test/)
-* OpenMP is optional but can speed up some more computations by parallelization
-* Several processors if you want to use the parallelization (dual or quadcores, etc.).
-* [SIMDe](https://github.com/simd-everywhere/simde) (included as git submodule) for portable SIMD on x86 and ARM.
-* openmpi and Boost.MPI if you want to do distributed parallelization, if not disable the MPI option in Makefile.rules.
+## Requirements
 
-Installation
-------------
-Clone the repository and initialize the SIMDe submodule:
+- **CMake** 3.16+
+- **C++20** compiler (e.g. GCC 10+, Clang 11+)
+- **OpenMP** for C++ (e.g. GCC with `libgomp`). On **macOS + Apple Clang**, install **`libomp`** (`brew install libomp`); CMake uses `brew --prefix libomp` for flags. Without it, configure fails at `FindOpenMP`.
+- [oneTBB](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onetbb.html) or compatible `libtbb`
+- [Boost](https://www.boost.org/), especially **Boost.Regex** (for the `test/` driver)
+- Multiple CPU cores if you want parallel speedups
+- [SIMDe](https://github.com/simd-everywhere/simde) (git submodule) for portable SIMD (x86 / ARM)
+- **Optional:** MPI + Boost.MPI for distributed runs — `-DENABLE_MPI=ON` (see [Build options](#build-options))
 
-    git clone --recursive <repository-url>
-    # or, if already cloned:
-    git submodule update --init
+## Build and install
 
-If you need to configure some settings (SSE, MPI) just have a look into Makefile.rules
+### Clone and submodules
 
-		vim Makefile.rules
+```bash
+git clone --recursive https://github.com/svrnm/parallelGBC
+# already cloned:
+git submodule update --init --recursive
+```
 
-Afterwards or if you'd like to use the default settings just execute
+### System packages (examples)
 
-    make
+**Debian / Ubuntu** (similar to CI):
 
-and if you have several CPUs, you can use
+```bash
+sudo apt-get install build-essential cmake g++ libboost-regex-dev libtbb-dev
+```
 
-    make -j<NUM_OF_PROCS>
+**macOS** (Homebrew):
 
-If you experience any problems, then have a look to the Makefile.rules or contact the author
+```bash
+brew install cmake libomp boost tbb
+```
 
-CMake (library + install)
------------------------
-Requires **CMake 3.16+**, same dependencies as above (OpenMP, Boost.Regex, TBB, SIMDe submodule).
+### Configure, build, test
 
-    cmake -B build -DCMAKE_BUILD_TYPE=Release
-    cmake --build build -j$(nproc)
-    ctest --test-dir build --output-on-failure
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+```
 
-Options (cache variables) mirror `Makefile.rules`: `PGBC_COEFF_BITS`, `PGBC_USE_SSE`, `PGBC_SORTING`, `PGBC_POST_REDUCE`, `PGBC_PARALLEL_SETUP`, and **`ENABLE_MPI`** (off by default).  
-Install: `cmake --install build --prefix /usr/local`. Installed CMake package: **`find_package(parallelGBC CONFIG)`** then **`target_link_libraries(... parallelGBC::f4)`**; public headers live under **`include/parallelGBC/`** (include **`parallelGBC/F4.H`**).
+The example driver is **`build/test-f4`**.
 
-Continuous integration: **`.github/workflows/ci.yml`** runs **GNU Make** + **`RunTests.sh`**, and a **CMake** build + **`ctest`** + install smoke test on **Ubuntu**.
+### Install (optional)
 
-Testing
--------
-Compute the degree reverse lexicographic gröbner basis of cyclic-8 with 4 threads
-and a lot of verbosity and without printing the groebner basis. The block size of
-the matrix is 1024. For computation the simplify algorithm is not used, the sugar
-cube selection strategy is.
+```bash
+cmake --install build --prefix /usr/local
+```
 
-    ./test/test-f4.bin ../input/cyclic8.txt 4 127 0 1024 0 1
+### Build options
 
-In general you can compute with this binary using the following parameters:
+Defaults match the historical in-tree defaults. Set at configure time, e.g. `cmake -B build -DPGBC_USE_SSE=0`, or use `ccmake` / `cmake-gui`:
 
-    ./test/test-f4.bin <input-file> <processors> <verbosity> <printGB> <blocksize> <doSimplify> <withSugar>
+| Variable | Meaning |
+| --- | --- |
+| `PGBC_COEFF_BITS` | Coefficient storage bits (8, 16, 32) |
+| `PGBC_USE_SSE` | SIMDe SIMD field ops (`0` or `1`) |
+| `PGBC_SORTING` | Reduction sorting mode |
+| `PGBC_POST_REDUCE` | Post-reduce with simplify |
+| `PGBC_PARALLEL_SETUP` | Parallel matrix setup |
+| `ENABLE_MPI` | MPI + Boost.MPI (`ON` / `OFF`, default `OFF`; requires MPI C++ and Boost.MPI/serialization) |
 
-If you have compiled the binary using MPI you can compute distributed:
+### Using the installed CMake package
 
-		mpirun -np <slots> --host <hosts> ./test/test-f4.bin <...>
+After install: `find_package(parallelGBC CONFIG)` and `target_link_libraries(... parallelGBC::f4)`. Headers are under **`include/parallelGBC/`** (e.g. `#include <parallelGBC/F4.H>`).
 
-Checking functionality
-----------------------
-The folder gb/ contains precomputed groebner bases over F_{32003} using degree reverse
-lexicographic term ordering (computed using ApCoCoA). Use 
+### Continuous integration
 
-    'make check'
-        
-to validate the functionality of parallelGBC.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) configures with CMake, runs **`ctest`**, and smoke-tests install (**`<prefix>/lib/libf4.a`** after `cmake --install`).
 
-`make check` compares output to `gb/*.txt` on the **smallest** thread count in `CORE_LIST` (reference is ApCoCoA-style). On the **largest** count it runs parallel F4 and, by default, Buchberger verification (OpenMP S-pairs), unless expected |G| exceeds `VERIFY_MAX_GB`. Use `VERIFY_GB=0 make check` to skip verification. Set `VERIFY_MAX_GB=0` to verify all sizes (can be very slow). Each verify run is capped by `VERIFY_TIMEOUT` (see `Makefile`). Defaults for `CORE_LIST`, `VERIFY_MAX_GB`, and `VERIFY_TIMEOUT` are in the top-level `Makefile`.
+## Testing
 
-Developer tooling
------------------
-* **`.clang-format`** — optional formatting for `.C` / `.H` (run `clang-format` manually or from your editor).
-* **`compile_commands.json`** — for clangd / IDEs: install [Bear](https://github.com/rizsotto/Bear), set `CXX` if needed, then run **`./scripts/gen-compile_commands.sh`** from the repo root (output is gitignored), or use **`cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`** with the CMake build.
+Example: degree reverse lexicographic Gröbner basis of **cyclic-8**, 4 threads, high verbosity, no GB printout, block size 1024, no simplify, with sugar — from the repository root:
 
-Verbosity
----------
-Verbosity, which can be changed during runtime, nothing which should
-influence performance. It' is an additional parameter for the F4 operator().
-Additionally you can give an output stream, which should be used for output.
-Default ist no verbosity and std::cout as output stream.
+```bash
+./build/test-f4 input/cyclic8.txt 4 127 0 1024 0 1
+```
 
-1 - Runtime
+General invocation:
 
-2 - Reduction time
+```text
+./build/test-f4 <input-file> <processors> <verbosity> <printGB> <blocksize> <doSimplify> <withSugar>
+```
 
-4 - Prepare time
+With MPI:
 
-8 - Update time
+```bash
+mpirun -np <slots> --host <hosts> ./build/test-f4 <...>
+```
 
-16 - Print sugar degree during reduction step
+## Regression / reference outputs
 
-32 - Print time of reduction step
+The **`gb/`** directory holds reference Gröbner bases over **F₃₂₀₀₃** in degree reverse lex order (ApCoCoA-style).
 
-64 - Print matrix size during reduction step
+Run the full regression suite:
 
-128 - Print all computed polynomials
+```bash
+ctest --test-dir build --output-on-failure
+```
 
-Usage and example
------------------
-If you want to use the code for your own project see test/test-f4.C as example.
+Or the shell driver (from repo root; override binary if needed):
 
-Contact
--------
-For any questions you can contact Severin Neumann <severin.neumann@computer.org>
+```bash
+TEST_F4_BIN="$PWD/build/test-f4" ./test/RunTests.sh
+```
+
+Behavior:
+
+- Compares against **`gb/*.txt`** on the **smallest** value in `CORE_LIST`.
+- On the **largest** core count: parallel F4 and, by default, Buchberger verification (OpenMP S-pairs), unless expected |G| exceeds `VERIFY_MAX_GB`.
+
+Useful environment overrides:
+
+| Scenario | Example |
+| --- | --- |
+| Skip Buchberger verification | `VERIFY_GB=0 ./test/RunTests.sh` |
+| Verify all sizes (can be very slow) | `VERIFY_MAX_GB=0` |
+| Cap verification time (seconds) | `VERIFY_TIMEOUT=900` |
+
+Defaults in **`test/RunTests.sh`**: `CORE_LIST` is `1 8`; `VERIFY_GB` is `0` if unset (use `VERIFY_GB=1` for stricter runs). **`ctest`** / CI set `VERIFY_GB`, `VERIFY_MAX_GB`, `VERIFY_TIMEOUT`, and `CORE_LIST` for you.
+
+## Developer tooling
+
+- **`.clang-format`** — optional for `.C` / `.H`; run from your editor or CLI.
+- **`compile_commands.json`** — for clangd / IDEs: configure with `cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`, build once, then point the IDE at **`build/compile_commands.json`**, or run **`./scripts/gen-compile_commands.sh`** to symlink it to the repo root (gitignored).
+
+## Verbosity flags
+
+Runtime verbosity does not materially affect performance. It is an extra argument to the F4 operator; you can also pass an output stream. Default: no verbosity, `std::cout`.
+
+| Bit | Meaning |
+| --- | --- |
+| 1 | Runtime |
+| 2 | Reduction time |
+| 4 | Prepare time |
+| 8 | Update time |
+| 16 | Print sugar degree during reduction |
+| 32 | Print time of reduction step |
+| 64 | Print matrix size during reduction |
+| 128 | Print all computed polynomials |
+
+## Usage in your own project
+
+See [`test/test-f4.C`](test/test-f4.C) for a minimal example of linking against the library.
+
+## Contact
+
+Severin Neumann — [severin.neumann@altmuehlnet.de](mailto:severin.neumann@altmuehlnet.de)
+
+## License
+
+This program is free software; see [LICENSE.txt](LICENSE.txt) for details.

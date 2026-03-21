@@ -1,0 +1,25 @@
+# SymbolicData (GPL) IntPS sources — https://github.com/symbolicdata/data
+#
+# Verify converter vs existing inputs (subset that matches SD multisets):
+#   make verify-symbolicdata
+#
+# Regenerate the “classic” batch (input + gb via test-f4):
+#   make test && python3 tools/add_sd_benchmarks.py
+
+examples:
+  - name: cyclic4
+    url: https://raw.githubusercontent.com/symbolicdata/data/master/XMLResources/IntPS/Cyclic_4.xml
+  - name: katsura8
+    url: https://raw.githubusercontent.com/symbolicdata/data/master/XMLResources/IntPS/Katsura_8.xml
+
+sd_benchmarks:
+  - { stem: caprasse, file: Caprasse.xml }
+  - { stem: butcher, file: Butcher.xml }
+  - { stem: fateman, file: Fateman.xml }
+  - { stem: trinks, file: Trinks.xml }
+  - { stem: noonburg, file: Noonburg-89.xml }
+  - { stem: four_body, file: FourBodyProblem.xml }
+  - { stem: discriminant_4, file: Discriminant_4.xml }
+  - { stem: reimer_5, file: Reimer_5.xml }
+  - { stem: gerdt_91a, file: Gerdt-91a.xml }
+  - { stem: ellipsoid_2, file: Ellipsoid_2.xml }
